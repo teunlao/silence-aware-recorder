@@ -10,12 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@chengsokdara/react-hooks-async": "^0.0.2",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.11.16",
     "@mui/material": "^5.13.3",
+    "axios": "^1.4.0",
+    "hark": "^1.2.3",
+    "lamejs": "^1.2.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "recordrtc": "^5.6.2"
   },
   "devDependencies": {
     "@types/react": "^18.0.37",

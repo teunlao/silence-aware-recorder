@@ -1,4 +1,5 @@
-import {useWhisper} from "./use-whisper/src";
+import {useWhisper} from "./use-whisper/src/useWhisper";
+
 
 function App() {
   const {
@@ -10,7 +11,12 @@ function App() {
     startRecording,
     stopRecording,
   } = useWhisper({
+    autoTranscribe: true,
+    mode: 'transcriptions',
     apiKey: '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', // YOUR_OPEN_AI_TOKEN
+    whisperConfig: {
+      language: 'ru'
+    }
   })
 
   return (

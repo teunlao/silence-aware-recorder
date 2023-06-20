@@ -9,155 +9,92 @@ app.innerHTML = `
   </div>
 `;
 
-const main = async () => {
-  let audioContext;
-  let mediaStreamSource;
-  let analyser;
-  let chunks = [];
-  let mediaRecorder;
-  let silenceTimeout;
+const silenceThreshold = -50; // Set to a very low volume level (almost silence)
+const silenceDuration = 2;    // duration of silence in seconds
+const checkInterval = 100;    // interval to check for silence in milliseconds
 
-// The silence threshold and the silence duration (in seconds)
-  let silenceThreshold = 100; // Set to a very low volume level (almost silence)
-  const silenceDuration = 2;
+let audioContext;
+let analyser;
+let mediaRecorder;
+let silenceTimeout;
 
-// Set minimum decibel level
-  const minDecibels = -80;
+const startButton = document.querySelector('#startButton');
+const stopButton = document.querySelector('#stopButton');
 
-  document.querySelector('#startButton').addEventListener('click', () => {
-    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-      .then(stream => {
-        audioContext = new AudioContext();
-        mediaStreamSource = audioContext.createMediaStreamSource(stream);
+startButton.addEventListener('click', start);
+stopButton.addEventListener('click', stop);
 
-        // Create an AnalyserNode
-        analyser = audioContext.createAnalyser();
-        analyser.minDecibels = minDecibels;
-        mediaStreamSource.connect(analyser);
+async function start() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
 
-        // Start the MediaRecorder with the audio stream
-        mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.start();
+  audioContext = new AudioContext();
+  analyser = audioContext.createAnalyser();
 
-        // When data is available, push it to the chunks array
-        mediaRecorder.ondataavailable = async event => {
-          console.log(event)
-          if (event.data.size > 6600 * silenceDuration) {
-            chunks.push(event.data);
-          }
-        };
+  const mediaStreamSource = audioContext.createMediaStreamSource(stream);
+  mediaStreamSource.connect(analyser);
 
-        // When the media recorder stops, create an audio element with the recorded data
-        mediaRecorder.onstop = () => {
-          if (chunks.length > 0) { // Make sure we have some recorded data
-            const blob = new Blob(chunks, { 'type' : 'audio/ogg; codecs=opus' });
-            const url = URL.createObjectURL(blob);
-            const audio = document.createElement('audio');
-            audio.src = url;
-            audio.controls = true;
-            document.querySelector('#audio-list').appendChild(audio);
-            chunks = [];
-          }
-        };
-
-        // Start checking for silence
-        checkForSilence();
-      })
-      .catch(err => console.error('Error getting audio stream:', err));
-  })
-
-  function checkForSilence() {
-    const bufferLength = analyser.frequencyBinCount;
-    const amplitudeArray = new Uint8Array(bufferLength);
-    analyser.getByteFrequencyData(amplitudeArray);
-
-    let aboveThreshold = false;
-    for(let i = 0; i < bufferLength; i++) {
-      if(amplitudeArray[i] > silenceThreshold) {
-        console.log(amplitudeArray[i])
-        console.log('above threshold')
-        aboveThreshold = true;
-        break;
-      }
-    }
-
-    if(aboveThreshold) {
-      if(silenceTimeout) {
-        clearTimeout(silenceTimeout);
-        silenceTimeout = null;
-      }
-    } else {
-      if(!silenceTimeout) {
-        silenceTimeout = setTimeout(() => {
-
-          mediaRecorder.stop();
-          silenceTimeout = null;
-          setTimeout(() => mediaRecorder.start(), 100);
-        }, silenceDuration * 1000);
-      }
-    }
-
-    setTimeout(checkForSilence, 100);
-  }
-};
-
-main()
-const second = () => {
-  const MIN_DECIBELS = -45;
-
-  navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(stream => {
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorder.start();
-
-      const audioChunks = [];
-      mediaRecorder.addEventListener("dataavailable", event => {
-        audioChunks.push(event.data);
-      });
-
-      const audioContext = new AudioContext();
-      const audioStreamSource = audioContext.createMediaStreamSource(stream);
-      const analyser = audioContext.createAnalyser();
-      analyser.minDecibels = MIN_DECIBELS;
-      audioStreamSource.connect(analyser);
-
-      const bufferLength = analyser.frequencyBinCount;
-      const domainData = new Uint8Array(bufferLength);
-
-      let soundDetected = false;
-
-      const detectSound = () => {
-        console.log({ soundDetected });
-        if (soundDetected) {
-          return
-        }
-
-        analyser.getByteFrequencyData(domainData);
-
-        for (let i = 0; i < bufferLength; i++) {
-          const value = domainData[i];
-
-          if (domainData[i] > 0) {
-            soundDetected = true
-          }
-        }
-
-        window.requestAnimationFrame(detectSound);
-      };
-
-      window.requestAnimationFrame(detectSound);
-
-      mediaRecorder.addEventListener("stop", () => {
-        const blob = new Blob(audioChunks, { 'type' : 'audio/ogg; codecs=opus' });
-        const url = URL.createObjectURL(blob);
-        const audio = document.createElement('audio');
-        audio.src = url;
-        audio.controls = true;
-        document.querySelector('#audio-list').appendChild(audio);
-
-        console.log({ soundDetected });
-      });
-    });
+  checkForSilence(stream);
 }
 
-// second()
+function stop() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+    mediaRecorder = null;
+  }
+}
+
+function checkForSilence(stream) {
+  const volume = getVolume();
+  console.log(volume)
+
+  if (volume > silenceThreshold && (!mediaRecorder || mediaRecorder.state === 'inactive')) {
+    startRecording(stream);
+  } else if (volume <= silenceThreshold && mediaRecorder && mediaRecorder.state === 'recording') {
+    silenceTimeout = setTimeout(() => {
+      mediaRecorder.stop();
+      silenceTimeout = null;
+    }, silenceDuration * 1000);
+  }
+
+  setTimeout(() => checkForSilence(stream), checkInterval);
+}
+
+function getVolume() {
+  const bufferLength = analyser.fftSize;
+  const amplitudeArray = new Float32Array(bufferLength);
+  analyser.getFloatTimeDomainData(amplitudeArray);
+
+  let values = 0;
+  for (let i = 0; i < amplitudeArray.length; i++) {
+    values += amplitudeArray[i] * amplitudeArray[i];
+  }
+
+  const average = Math.sqrt(values / amplitudeArray.length);
+  return 20 * Math.log10(average);  // convert to dB
+}
+
+function startRecording(stream) {
+  const chunks = [];
+  mediaRecorder = new MediaRecorder(stream);
+
+  mediaRecorder.ondataavailable = event => {
+    if (event.data.size > 0) {
+      chunks.push(event.data);
+    }
+  };
+  mediaRecorder.onstop = () => addAudioElement(chunks);
+
+  mediaRecorder.start();
+}
+
+function addAudioElement(chunks) {
+  const blob = new Blob(chunks, { 'type' : 'audio/ogg; codecs=opus' });
+  const url = URL.createObjectURL(blob);
+
+  const audio = document.createElement('audio');
+  audio.src = url;
+  audio.controls = true;
+
+  document.querySelector('#audio-list').appendChild(audio);
+}
+
