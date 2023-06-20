@@ -1,29 +1,34 @@
-import {useWhisper} from "./use-whisper/src";
+import React from 'react';
+import './index.css';
+import useSilenceAwareRecorder from '../../../src/react/useSilenceAwareRecorder';
 
-function App() {
-  const {
-    recording,
-    speaking,
-    transcribing,
-    transcript,
-    pauseRecording,
-    startRecording,
-    stopRecording,
-  } = useWhisper({
-    apiKey: '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', // YOUR_OPEN_AI_TOKEN
-  })
+const App = () => {
+  const [volume, setVolume] = React.useState(0);
+
+  const { startRecording, stopRecording } = useSilenceAwareRecorder({
+    onDataAvailable: (data) => {
+      console.log('data', data);
+    },
+    onVolumeChange: (data) => {
+      setVolume(data);
+    },
+  });
 
   return (
     <div>
-      <p>Recording: {recording}</p>
-      <p>Speaking: {speaking}</p>
-      <p>Transcribing: {transcribing}</p>
-      <p>Transcribed Text: {transcript.text}</p>
-      <button onClick={() => startRecording()}>Start</button>
-      <button onClick={() => pauseRecording()}>Pause</button>
-      <button onClick={() => stopRecording()}>Stop</button>
+      <h3 id="volume">{volume.toFixed(2)}</h3>
+      <button id="startButton" onClick={startRecording}>
+        Начать
+      </button>
+      <button id="stopButton" onClick={stopRecording}>
+        Остановить
+      </button>
+      <div
+        id="audio-list"
+        style={{ display: 'flex', flexDirection: 'column' }}
+      />
     </div>
   );
-}
+};
 
 export default App;

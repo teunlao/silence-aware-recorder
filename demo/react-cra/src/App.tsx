@@ -13,7 +13,7 @@ function App() {
   } = useWhisper({
     autoTranscribe: true,
     mode: 'transcriptions',
-    apiKey: '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', // YOUR_OPEN_AI_TOKEN
+    apiKey: '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', // YOUR_OPEN_AI_TOKEN
     whisperConfig: {
       language: 'ru'
     }

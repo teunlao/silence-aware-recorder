@@ -1,7 +1,7 @@
 type OnVolumeChange = (volume: number) => void;
 type OnDataAvailable = (data: Blob) => void;
 
-interface SilenceAwareRecorderOptions {
+export interface SilenceAwareRecorderOptions {
   minDecibels?: number;
   onDataAvailable: OnDataAvailable;
   onVolumeChange: OnVolumeChange;
@@ -116,7 +116,6 @@ class SilenceAwareRecorder {
     const average = Math.sqrt(values / amplitudeArray.length); // calculate rms
     const volume = 20 * Math.log10(average); // convert to dB
 
-    // Call the onVolumeChange callback with the current volume
     this.onVolumeChange(volume);
 
     if (volume < this.silenceThreshold) {
