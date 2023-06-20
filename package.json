@@ -49,5 +49,13 @@
     "external": [
       "react"
     ]
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./dist/lib/index.js",
+    "./react": "./dist/react/index.js"
   }
 }

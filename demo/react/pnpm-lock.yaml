@@ -34,6 +34,9 @@ dependencies:
   recordrtc:
     specifier: ^5.6.2
     version: 5.6.2
+  silence-aware-recorder:
+    specifier: ^1.0.0
+    version: 1.0.0
 
 devDependencies:
   '@types/react':
@@ -1975,6 +1978,10 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
     dev: true
+
+  /silence-aware-recorder@1.0.0:
+    resolution: {integrity: sha512-oYakeA+z+8z1JNMB0dZjd/ZxSJuhfBW2UNFkw8PasA5chWCmwUygF2HPWl+cXPvMnrBhnab3ozPuTsI4A7ly1g==}
+    dev: false
 
   /slash@3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}

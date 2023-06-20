@@ -1,6 +1,6 @@
 import React from 'react';
 import './index.css';
-import useSilenceAwareRecorder from '../../../src/react/useSilenceAwareRecorder';
+import { useSilenceAwareRecorder } from 'silence-aware-recorder';
 
 const App = () => {
   const [volume, setVolume] = React.useState(0);
