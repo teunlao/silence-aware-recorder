@@ -6,6 +6,7 @@
         "moduleResolution": "node",
         "skipLibCheck": true,
         "strict": true,
-        "noEmit": true
+        "noEmit": true,
+        "lib": ["DOM", "ES2015"]
     }
 }

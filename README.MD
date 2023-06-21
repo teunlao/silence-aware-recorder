@@ -4,9 +4,10 @@
 
 ## Features
 
-- Continuous measurement of audio volume and triggering of a callback function when the volume changes.
-- Management of silent periods by stopping and restarting the recording when sound is detected.
-- Provision of recorded audio data chunks via a callback function.
+- Monitors the audio volume continuously and triggers a callback function whenever the volume changes.
+- Handles silent periods by stopping and starting the recording as sound is detected.
+- Provides recorded audio data chunks via a callback function.
+- Allows switching between audio input devices.
 
 ## Installation
 
@@ -84,6 +85,7 @@ This is the options object that you can pass to the `SilenceAwareRecorder` const
 - `silenceDuration`: Duration of silence in milliseconds to wait before stopping the recording. Defaults to `2500`.
 - `silentThreshold`: Decibel level below which is considered silence. Defaults to `-50`.
 - `minDecibels`: The minimum power value in the scaling range for the FFT analysis data for conversion to decibels. Defaults to `-100`.
+- `deviceId`: The ID of the device to be used for recording.
 
 ### `startRecording()`
 
@@ -92,6 +94,10 @@ This method starts the recording process. It returns a promise that resolves whe
 ### `stopRecording()`
 
 This method stops the recording process. It also ensures that all remaining audio data (not silence) is provided via the `onDataAvailable` callback before the recording is fully stopped.
+
+### `setDevice(deviceId)`
+
+This method allows switching the recording device by accepting a device ID.
 
 ## Contributing
 

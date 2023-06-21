@@ -28,6 +28,7 @@ module.exports = {
     'prefer-arrow',
   ],
   rules: {
+    'class-methods-use-this': 'off',
     '@typescript-eslint/no-unused-vars': 'error',
     'import/extensions': 'off',
     'import/no-extraneous-dependencies': 'off',
