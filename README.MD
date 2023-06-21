@@ -11,7 +11,7 @@
 ## Installation
 
 ```shell
-npm install your-library-name
+npm install silence-aware-recorder
 ```
 
 ## Usage
