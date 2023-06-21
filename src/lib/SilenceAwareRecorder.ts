@@ -1,5 +1,5 @@
-type OnVolumeChange = (volume: number) => void;
-type OnDataAvailable = (data: Blob) => void | undefined;
+export type OnVolumeChange = (volume: number) => void;
+export type OnDataAvailable = (data: Blob) => void | undefined;
 
 export interface SilenceAwareRecorderOptions {
   deviceId?: string;
