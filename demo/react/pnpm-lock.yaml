@@ -35,8 +35,8 @@ dependencies:
     specifier: ^5.6.2
     version: 5.6.2
   silence-aware-recorder:
-    specifier: ^1.0.0
-    version: 1.0.0
+    specifier: ^1.0.1
+    version: 1.0.1
 
 devDependencies:
   '@types/react':
@@ -1979,8 +1979,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /silence-aware-recorder@1.0.0:
-    resolution: {integrity: sha512-oYakeA+z+8z1JNMB0dZjd/ZxSJuhfBW2UNFkw8PasA5chWCmwUygF2HPWl+cXPvMnrBhnab3ozPuTsI4A7ly1g==}
+  /silence-aware-recorder@1.0.1:
+    resolution: {integrity: sha512-wkwavJJpCVDNbfziD08XBHjHxAnD23uU1W1BWGIf6BNwb/tLx6OfKSJCtSP3WBxvviKu2YXOJigOL0Iek7AkAg==}
     dev: false
 
   /slash@3.0.0:

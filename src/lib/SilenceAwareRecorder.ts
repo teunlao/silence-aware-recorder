@@ -1,10 +1,10 @@
 type OnVolumeChange = (volume: number) => void;
-type OnDataAvailable = (data: Blob) => void;
+type OnDataAvailable = (data: Blob) => void | undefined;
 
 export interface SilenceAwareRecorderOptions {
   minDecibels?: number;
-  onDataAvailable: OnDataAvailable;
-  onVolumeChange: OnVolumeChange;
+  onDataAvailable?: OnDataAvailable;
+  onVolumeChange?: OnVolumeChange;
   silenceDuration?: number;
   silentThreshold?: number;
 }
@@ -26,9 +26,9 @@ class SilenceAwareRecorder {
 
   private readonly minDecibels: number;
 
-  private readonly onVolumeChange: OnVolumeChange;
+  private readonly onVolumeChange?: OnVolumeChange;
 
-  private readonly onDataAvailable: OnDataAvailable;
+  private readonly onDataAvailable?: OnDataAvailable;
 
   private isSilence: boolean;
 
@@ -71,7 +71,7 @@ class SilenceAwareRecorder {
 
       this.mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0 && this.hasSoundStarted) {
-          this.onDataAvailable(event.data);
+          this.onDataAvailable?.(event.data);
         }
       };
 
@@ -79,21 +79,34 @@ class SilenceAwareRecorder {
 
       this.checkForSilence();
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error getting audio stream:', err);
     }
   }
 
   stopRecording(): void {
     if (this.mediaRecorder) {
-      this.mediaRecorder.stop();
-      this.mediaRecorder.stream.getTracks().forEach((track) => track.stop());
-      if (this.silenceTimeout) {
-        clearTimeout(this.silenceTimeout);
-        this.silenceTimeout = null;
+      if (this.hasSoundStarted) {
+        this.mediaRecorder.requestData();
+        setTimeout(() => {
+          this.mediaRecorder?.stop();
+          this.mediaRecorder?.stream
+            ?.getTracks()
+            .forEach((track) => track.stop());
+          this.audioContext?.close();
+          this.hasSoundStarted = false;
+        }, 100); // adjust this delay as necessary
+      } else {
+        this.mediaRecorder.stop();
+        this.mediaRecorder.stream.getTracks().forEach((track) => track.stop());
+        this.audioContext?.close();
+        this.hasSoundStarted = false;
       }
-      this.audioContext?.close();
     }
-    this.hasSoundStarted = false;
+    if (this.silenceTimeout) {
+      clearTimeout(this.silenceTimeout);
+      this.silenceTimeout = null;
+    }
   }
 
   checkForSilence(): void {
@@ -116,7 +129,7 @@ class SilenceAwareRecorder {
     const average = Math.sqrt(values / amplitudeArray.length); // calculate rms
     const volume = 20 * Math.log10(average); // convert to dB
 
-    this.onVolumeChange(volume);
+    this.onVolumeChange?.(volume);
 
     if (volume < this.silenceThreshold) {
       if (!this.silenceTimeout) {

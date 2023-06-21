@@ -1,11 +1,13 @@
 import React from 'react';
 import './index.css';
-import { useSilenceAwareRecorder } from 'silence-aware-recorder';
+import useSilenceAwareRecorder from '../../../src/react/useSilenceAwareRecorder';
 
 const App = () => {
   const [volume, setVolume] = React.useState(0);
 
   const { startRecording, stopRecording } = useSilenceAwareRecorder({
+    silentThreshold: -30,
+    minDecibels: -100,
     onDataAvailable: (data) => {
       console.log('data', data);
     },
