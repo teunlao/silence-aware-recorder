@@ -57,7 +57,7 @@ You can use `useSilenceAwareRecorder` hook in your React application for seamles
 import useSilenceAwareRecorder from 'silence-aware-recorder/react';
 
 const YourComponent = () => {
-  const { startRecording, stopRecording } = useSilenceAwareRecorder({
+  const { startRecording, stopRecording, isRecording, deviceId, setDevice } = useSilenceAwareRecorder({
     onDataAvailable: (data) => console.log(data),
     onVolumeChange: (volume) => console.log(volume),
     silenceDuration: 2500,
@@ -67,6 +67,7 @@ const YourComponent = () => {
 
   return (
     <div>
+      <h3>Recording: {isRecording ? 'Is recording' : 'Is not recording'}</h3>
       <button onClick={startRecording}>Start</button>
       <button onClick={stopRecording}>Stop</button>
     </div>

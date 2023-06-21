@@ -1,11 +1,11 @@
 {
   "name": "silence-aware-recorder",
-  "author": "",
+  "author": "Dmitrii Osipov",
   "version": "1.0.2",
-  "description": "init",
+  "description": "Audio control with silence detection.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsup"
   },
   "keywords": [],
   "license": "ISC",
