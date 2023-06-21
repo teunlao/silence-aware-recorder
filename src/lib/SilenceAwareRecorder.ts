@@ -68,57 +68,59 @@ class SilenceAwareRecorder {
   }
 
   async startRecording(): Promise<void> {
-    console.log('this.deviceId', this.deviceId);
     if (this.isRecording) {
       return;
     }
 
     try {
-      // eslint-disable-next-line no-undef
-      const constraints: MediaStreamConstraints = {
-        audio: this.deviceId ? { deviceId: { exact: this.deviceId } } : true,
-        video: false,
-      };
-
-      console.log('constraints', constraints);
-      console.log(this.deviceId);
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      this.audioContext = new AudioContext();
-      this.mediaStreamSource =
-        this.audioContext.createMediaStreamSource(stream);
-      this.analyser = this.audioContext.createAnalyser();
-      this.analyser.minDecibels = this.minDecibels;
-      this.mediaStreamSource.connect(this.analyser);
-      this.mediaRecorder = new MediaRecorder(stream);
-
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0 && this.hasSoundStarted) {
-          this.onDataAvailable?.(event.data);
-        }
-      };
-
-      this.mediaRecorder.start();
+      const stream = await this.getAudioStream();
+      this.setupAudioContext(stream);
+      this.setupMediaRecorder(stream);
       this.isRecording = true;
-
       this.checkForSilence();
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('Error getting audio stream:', err);
     }
   }
 
+  private async getAudioStream(): Promise<MediaStream> {
+    // eslint-disable-next-line no-undef
+    const constraints: MediaStreamConstraints = {
+      audio: this.deviceId ? { deviceId: { exact: this.deviceId } } : true,
+      video: false,
+    };
+
+    return navigator.mediaDevices.getUserMedia(constraints);
+  }
+
+  private setupAudioContext(stream: MediaStream): void {
+    this.audioContext = new AudioContext();
+    this.mediaStreamSource = this.audioContext.createMediaStreamSource(stream);
+    this.analyser = this.audioContext.createAnalyser();
+    this.analyser.minDecibels = this.minDecibels;
+    this.mediaStreamSource.connect(this.analyser);
+  }
+
+  private setupMediaRecorder(stream: MediaStream): void {
+    this.mediaRecorder = new MediaRecorder(stream);
+
+    this.mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0 && this.hasSoundStarted) {
+        this.onDataAvailable?.(event.data);
+      }
+    };
+
+    this.mediaRecorder.start();
+  }
+
   async getAvailableDevices(): Promise<MediaDeviceInfo[]> {
     const devices = await navigator.mediaDevices.enumerateDevices();
-    console.log('devices', devices);
     return devices;
   }
 
   setDevice(deviceId: string): void {
-    console.log('setDevice', deviceId);
-
     if (this.deviceId !== deviceId) {
       this.deviceId = deviceId;
-      console.log('this.deviceId', this.deviceId);
       if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
         // If the recording is running, stop it before switching devices
         this.stopRecording();
@@ -160,7 +162,7 @@ class SilenceAwareRecorder {
     this.isRecording = false;
   }
 
-  checkForSilence(): void {
+  private checkForSilence(): void {
     if (!this.mediaRecorder) {
       throw new Error('MediaRecorder is not available');
     }
