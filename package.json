@@ -1,7 +1,7 @@
 {
   "name": "silence-aware-recorder",
   "author": "Dmitrii Osipov",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Audio control with silence detection.",
   "main": "index.js",
   "scripts": {
