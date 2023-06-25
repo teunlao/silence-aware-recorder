@@ -1,13 +1,12 @@
 import React, { useEffect } from 'react';
 import './index.css';
-import useSilenceAwareRecorder from '../../../src/react/useSilenceAwareRecorder';
+// import useSilenceAwareRecorder from '../../../src/react/useSilenceAwareRecorder';
+import useSilenceAwareRecorder from 'silence-aware-recorder/react';
 
 const App = () => {
   const [volume, setVolume] = React.useState(0);
   const [selectedDevice, setSelectedDevice] = React.useState('');
-  const [devices, setDevices] = React.useState<MediaDeviceInfo[] | undefined>(
-    []
-  );
+  const [devices, setDevices] = React.useState<MediaDeviceInfo[] | undefined>([]);
 
   useEffect(() => {
     navigator.mediaDevices.enumerateDevices().then((data) => {
@@ -16,17 +15,16 @@ const App = () => {
     });
   }, []);
 
-  const { startRecording, stopRecording, isRecording, deviceId, setDevice } =
-    useSilenceAwareRecorder({
-      silentThreshold: -30,
-      minDecibels: -100,
-      onDataAvailable: (data) => {
-        console.log('data', data);
-      },
-      onVolumeChange: (data) => {
-        setVolume(data);
-      },
-    });
+  const { startRecording, stopRecording, isRecording, deviceId, setDevice } = useSilenceAwareRecorder({
+    silentThreshold: -30,
+    minDecibels: -100,
+    onDataAvailable: (data) => {
+      console.log('data', data);
+    },
+    onVolumeChange: (data) => {
+      setVolume(data);
+    },
+  });
 
   useEffect(() => {
     console.log('selectedDevice', selectedDevice);
@@ -61,10 +59,7 @@ const App = () => {
       <button id="stopButton" onClick={stopRecording}>
         Остановить
       </button>
-      <div
-        id="audio-list"
-        style={{ display: 'flex', flexDirection: 'column' }}
-      />
+      <div id="audio-list" style={{ display: 'flex', flexDirection: 'column' }} />
     </div>
   );
 };
