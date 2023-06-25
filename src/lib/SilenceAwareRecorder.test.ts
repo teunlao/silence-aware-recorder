@@ -7,7 +7,7 @@ import SilenceAwareRecorder, {
 const mockOnVolumeChange: OnVolumeChange = jest.fn();
 const mockOnDataAvailable: OnDataAvailable = jest.fn();
 const deviceId = 'test-id';
-const options: SilenceAwareRecorderOptions = {
+const gitoptions: SilenceAwareRecorderOptions = {
   onVolumeChange: mockOnVolumeChange,
   onDataAvailable: mockOnDataAvailable,
   deviceId,
