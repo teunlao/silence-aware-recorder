@@ -6,6 +6,7 @@ const useSilenceAwareRecorder = (options: SilenceAwareRecorderOptions) => {
   const [recorder, setRecorder] = useState<SilenceAwareRecorder | null>(null);
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [deviceId, setDeviceId] = useState<string>(initialDeviceId);
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
 
   useEffect(() => {
     const silenceAwareRecorder = new SilenceAwareRecorder(options);
@@ -16,6 +17,14 @@ const useSilenceAwareRecorder = (options: SilenceAwareRecorderOptions) => {
       silenceAwareRecorder.stopRecording();
     };
   }, [silenceDuration, silentThreshold, minDecibels, deviceId]);
+
+  useEffect(() => {
+    if (recorder) {
+      recorder.getAvailableDevices().then((availableDevices) => {
+        setDevices(availableDevices);
+      });
+    }
+  }, [recorder]);
 
   const startRecording = useCallback(() => {
     recorder?.startRecording();
@@ -31,15 +40,13 @@ const useSilenceAwareRecorder = (options: SilenceAwareRecorderOptions) => {
     setDeviceId(newDeviceId);
   }, []);
 
-  const getAvailableDevices = useCallback(async () => recorder?.getAvailableDevices(), [recorder]);
-
   return {
+    availableDevices: devices,
     startRecording,
     stopRecording,
     setDevice,
     isRecording,
     deviceId,
-    getAvailableDevices,
   };
 };
 

@@ -5,16 +5,23 @@ export interface SilenceAwareRecorderOptions {
   deviceId?: string;
   minDecibels?: number;
   onDataAvailable?: OnDataAvailable;
-
   onVolumeChange?: OnVolumeChange;
+
   setDeviceId?: (deviceId: string) => void;
+  silenceDetectionEnabled?: boolean;
 
   silenceDuration?: number;
 
   silentThreshold?: number;
+  stopRecorderOnSilence?: boolean;
+  timeSlice?: number;
 }
 
 class SilenceAwareRecorder {
+  private readonly silenceDetectionEnabled: boolean;
+
+  private readonly timeSlice: number;
+
   private audioContext: AudioContext | null;
 
   private mediaStreamSource: MediaStreamAudioSourceNode | null;
@@ -43,6 +50,8 @@ class SilenceAwareRecorder {
 
   public isRecording: boolean;
 
+  private readonly stopRecorderOnSilence: boolean;
+
   constructor({
     onVolumeChange,
     onDataAvailable,
@@ -50,7 +59,13 @@ class SilenceAwareRecorder {
     silentThreshold = -50,
     minDecibels = -100,
     deviceId = 'default',
+    timeSlice = 250,
+    silenceDetectionEnabled = true,
+    stopRecorderOnSilence = false,
   }: SilenceAwareRecorderOptions) {
+    this.silenceDetectionEnabled = silenceDetectionEnabled;
+    this.stopRecorderOnSilence = stopRecorderOnSilence;
+    this.timeSlice = timeSlice;
     this.audioContext = null;
     this.mediaStreamSource = null;
     this.analyser = null;
@@ -105,17 +120,16 @@ class SilenceAwareRecorder {
     this.mediaRecorder = new MediaRecorder(stream);
 
     this.mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0 && this.hasSoundStarted) {
+      if (event.data.size > 0 && !this.isSilence) {
         this.onDataAvailable?.(event.data);
       }
     };
 
-    this.mediaRecorder.start();
+    this.mediaRecorder.start(this.timeSlice);
   }
 
   async getAvailableDevices(): Promise<MediaDeviceInfo[]> {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    return devices;
+    return navigator.mediaDevices.enumerateDevices();
   }
 
   setDevice(deviceId: string): void {
@@ -133,11 +147,7 @@ class SilenceAwareRecorder {
       return;
     }
 
-    if (
-      this.mediaRecorder &&
-      this.hasSoundStarted &&
-      this.mediaRecorder.state === 'recording'
-    ) {
+    if (this.mediaRecorder && this.hasSoundStarted && this.mediaRecorder.state === 'recording') {
       this.mediaRecorder.requestData();
       setTimeout(() => {
         this.cleanUp();
@@ -179,25 +189,31 @@ class SilenceAwareRecorder {
 
     this.onVolumeChange?.(volume);
 
-    if (volume < this.silenceThreshold) {
-      if (!this.silenceTimeout && this.mediaRecorder.state !== 'inactive') {
-        this.silenceTimeout = setTimeout(() => {
-          this.mediaRecorder?.stop();
-          this.isSilence = true;
+    if (this.silenceDetectionEnabled) {
+      if (volume < this.silenceThreshold) {
+        if (!this.silenceTimeout) {
+          this.silenceTimeout = setTimeout(() => {
+            if (this.stopRecorderOnSilence) {
+              this.mediaRecorder?.stop();
+            }
+            this.isSilence = true;
+            this.silenceTimeout = null;
+          }, this.silenceDuration);
+        }
+      } else {
+        if (this.silenceTimeout) {
+          clearTimeout(this.silenceTimeout);
           this.silenceTimeout = null;
-        }, this.silenceDuration);
-      }
-    } else {
-      if (this.silenceTimeout) {
-        clearTimeout(this.silenceTimeout);
-        this.silenceTimeout = null;
-      }
-      if (this.isSilence && this.mediaRecorder.state !== 'recording') {
-        this.mediaRecorder.start();
-        this.isSilence = false;
-      }
-      if (!this.hasSoundStarted) {
-        this.hasSoundStarted = true;
+        }
+        if (this.isSilence) {
+          if (this.stopRecorderOnSilence) {
+            this.mediaRecorder.start(this.timeSlice);
+          }
+          this.isSilence = false;
+        }
+        if (!this.hasSoundStarted) {
+          this.hasSoundStarted = true;
+        }
       }
     }
 
@@ -205,10 +221,7 @@ class SilenceAwareRecorder {
   }
 
   private computeVolume(amplitudeArray: Float32Array): number {
-    const values = amplitudeArray.reduce(
-      (sum, value) => sum + value * value,
-      0
-    );
+    const values = amplitudeArray.reduce((sum, value) => sum + value * value, 0);
     const average = Math.sqrt(values / amplitudeArray.length); // calculate rms
     const volume = 20 * Math.log10(average); // convert to dB
     return volume;

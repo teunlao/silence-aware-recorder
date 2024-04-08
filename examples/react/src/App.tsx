@@ -1,33 +1,26 @@
-import React, { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import './index.css';
-// import useSilenceAwareRecorder from '../../../src/react/useSilenceAwareRecorder';
 import useSilenceAwareRecorder from 'silence-aware-recorder/react';
 
 const App = () => {
-  const [volume, setVolume] = React.useState(0);
-  const [selectedDevice, setSelectedDevice] = React.useState('');
-  const [devices, setDevices] = React.useState<MediaDeviceInfo[] | undefined>([]);
+  const [volume, setVolume] = useState(0);
+  const [selectedDevice, setSelectedDevice] = useState('');
+
+  const { startRecording, stopRecording, isRecording, deviceId, setDevice, availableDevices } = useSilenceAwareRecorder(
+    {
+      silenceDuration: 1000,
+      silentThreshold: -30,
+      minDecibels: -100,
+      onDataAvailable: (data) => {
+        console.log('data', data);
+      },
+      onVolumeChange: (data) => {
+        setVolume(data);
+      },
+    }
+  );
 
   useEffect(() => {
-    navigator.mediaDevices.enumerateDevices().then((data) => {
-      console.log('data', data);
-      setDevices(data);
-    });
-  }, []);
-
-  const { startRecording, stopRecording, isRecording, deviceId, setDevice } = useSilenceAwareRecorder({
-    silentThreshold: -30,
-    minDecibels: -100,
-    onDataAvailable: (data) => {
-      console.log('data', data);
-    },
-    onVolumeChange: (data) => {
-      setVolume(data);
-    },
-  });
-
-  useEffect(() => {
-    console.log('selectedDevice', selectedDevice);
     setDevice(selectedDevice);
   }, [selectedDevice]);
 
@@ -42,8 +35,8 @@ const App = () => {
             setSelectedDevice(event.target.value);
           }}
         >
-          {devices &&
-            devices.map((device, index) => (
+          {availableDevices &&
+            availableDevices.map((device, index) => (
               // eslint-disable-next-line react/no-array-index-key
               <option key={device.deviceId + index} value={device.deviceId}>
                 {device.label || `Microphone ${device.label}`}

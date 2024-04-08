@@ -21,7 +21,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "recordrtc": "^5.6.2",
-    "silence-aware-recorder": "^1.0.1"
+    "silence-aware-recorder": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^18.0.37",
@@ -33,6 +33,6 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.3.4",
     "typescript": "^5.0.2",
-    "vite": "^4.3.9"
+    "vite": "5.2.8"
   }
 }
