@@ -52,6 +52,8 @@ class SilenceAwareRecorder {
 
   private readonly stopRecorderOnSilence: boolean;
 
+  private animationFrameId: number | null;
+
   constructor({
     onVolumeChange,
     onDataAvailable,
@@ -80,6 +82,7 @@ class SilenceAwareRecorder {
     this.hasSoundStarted = false;
     this.deviceId = deviceId;
     this.isRecording = false;
+    this.animationFrameId = null;
   }
 
   async startRecording(): Promise<void> {
@@ -165,6 +168,7 @@ class SilenceAwareRecorder {
   private cleanUp(): void {
     if (this.mediaRecorder?.state === 'recording') {
       this.mediaRecorder?.stop();
+      cancelAnimationFrame(this.animationFrameId!);
     }
     this.mediaRecorder?.stream?.getTracks().forEach((track) => track.stop());
     this.audioContext?.close();
@@ -217,7 +221,7 @@ class SilenceAwareRecorder {
       }
     }
 
-    requestAnimationFrame(() => this.checkForSilence());
+    this.animationFrameId = requestAnimationFrame(() => this.checkForSilence());
   }
 
   private computeVolume(amplitudeArray: Float32Array): number {
