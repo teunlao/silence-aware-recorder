@@ -1,32 +1,15 @@
-import type { CoreError, Frame, PipelineDependencies, Segment, Stage, VADScore } from '@saraudio/core';
-import { Pipeline } from '@saraudio/core';
+import type { CoreError, Frame, Pipeline, Segment, Stage, VADScore } from '@saraudio/core';
+import type { BrowserRuntime, SegmenterFactoryOptions } from '@saraudio/runtime-browser';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSaraudioContext } from './context';
-
-interface ResolvedDependencies extends PipelineDependencies {
-  descriptor: string;
-}
-
-const createDefaultDependencies = (): PipelineDependencies => {
-  const now =
-    typeof performance !== 'undefined' && typeof performance.now === 'function'
-      ? () => performance.now()
-      : () => Date.now();
-
-  const createId =
-    typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? () => crypto.randomUUID()
-      : () => Math.random().toString(16).slice(2);
-
-  return { now, createId };
-};
+import { useSaraudioRuntime } from './context';
 
 export interface UseSaraudioPipelineOptions {
   stages: Stage[];
-  dependencies?: Partial<PipelineDependencies>;
+  segmenter?: SegmenterFactoryOptions | Stage | false;
   retainSegments?: number;
   onSegment?: (segment: Segment) => void;
   onError?: (error: CoreError) => void;
+  runtime?: BrowserRuntime;
 }
 
 export interface UseSaraudioPipelineResult {
@@ -42,32 +25,48 @@ export interface UseSaraudioPipelineResult {
 
 const shouldCollectSegments = (retainSegments?: number): boolean => Boolean(retainSegments && retainSegments > 0);
 
+const isStage = (value: SegmenterFactoryOptions | Stage): value is Stage =>
+  typeof (value as Stage).handle === 'function' && typeof (value as Stage).setup === 'function';
+
+const toSegmenterConfig = (value: UseSaraudioPipelineOptions['segmenter']): SegmenterFactoryOptions | Stage | false => {
+  if (value === false) {
+    return false;
+  }
+  if (!value) {
+    return {};
+  }
+  if (isStage(value)) {
+    return value;
+  }
+  return value;
+};
+
 export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSaraudioPipelineResult => {
-  const { stages, dependencies, retainSegments, onSegment, onError } = options;
-  const providerValue = useSaraudioContext();
-  const defaultDeps = useMemo(() => createDefaultDependencies(), []);
-  const overrideNow = dependencies?.now;
-  const overrideCreateId = dependencies?.createId;
+  const { stages, segmenter, retainSegments, onSegment, onError, runtime: runtimeOverride } = options;
+  const runtime = useSaraudioRuntime(runtimeOverride);
 
-  const resolvedDeps: ResolvedDependencies = useMemo(() => {
-    const now = overrideNow ?? providerValue.now ?? defaultDeps.now;
-    const createId = overrideCreateId ?? providerValue.createId ?? defaultDeps.createId;
-    return {
-      now,
-      createId,
-      descriptor: `${now.toString()}::${createId.toString()}`,
-    };
-  }, [overrideNow, overrideCreateId, providerValue.now, providerValue.createId, defaultDeps]);
+  const stageSnapshotRef = useRef<Stage[]>([]);
 
-  const stageList = useMemo(() => [...stages], [stages]);
+  const stageList = useMemo(() => {
+    const previous = stageSnapshotRef.current;
+    const sameList =
+      previous.length === stages.length && previous.every((stage, index) => stage === stages[index]);
+    if (sameList) {
+      return previous;
+    }
+    const next = [...stages];
+    stageSnapshotRef.current = next;
+    return next;
+  }, [stages]);
+  const segmenterConfig = useMemo(() => toSegmenterConfig(segmenter), [segmenter]);
 
   const pipeline = useMemo(() => {
-    const instance = new Pipeline({ now: resolvedDeps.now, createId: resolvedDeps.createId });
-    stageList.forEach((stage) => {
-      instance.use(stage);
+    const instance = runtime.createPipeline({
+      stages: stageList,
+      segmenter: segmenterConfig === false ? false : segmenterConfig,
     });
     return instance;
-  }, [stageList, resolvedDeps]);
+  }, [runtime, stageList, segmenterConfig]);
 
   const disposedRef = useRef(false);
   const [isSpeech, setIsSpeech] = useState(false);
@@ -77,8 +76,13 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
 
   useEffect(() => {
     disposedRef.current = false;
+    setIsSpeech(false);
+    setLastVad(null);
+    setSegments([]);
+
     return () => {
       if (!disposedRef.current) {
+        pipeline.flush();
         pipeline.dispose();
         disposedRef.current = true;
       }
@@ -98,13 +102,13 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
       setIsSpeech(false);
     });
 
-    const unsubscribeSegment = pipeline.events.on('segment', (segment: Segment) => {
-      onSegment?.(segment);
+    const unsubscribeSegment = pipeline.events.on('segment', (segmentPayload: Segment) => {
+      onSegment?.(segmentPayload);
       if (!collectSegments) {
         return;
       }
       setSegments((prev) => {
-        const next = [...prev, segment];
+        const next = [...prev, segmentPayload];
         if (retainSegments && next.length > retainSegments) {
           next.splice(0, next.length - retainSegments);
         }
