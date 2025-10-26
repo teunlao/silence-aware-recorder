@@ -8,10 +8,8 @@ export default defineConfig({
       composite: false,
     },
   },
-  sourcemap: 'inline',
-  minify: true,
+  sourcemap: true,
   clean: true,
-  splitting: false,
-  treeshake: true,
+  target: 'es2018',
   external: ['react'],
 });

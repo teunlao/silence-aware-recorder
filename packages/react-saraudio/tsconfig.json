@@ -4,10 +4,8 @@
     "composite": true,
     "rootDir": "src",
     "outDir": "dist",
-    "jsx": "react-jsx",
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "types": ["react"]
+    "jsx": "react-jsx"
   },
   "exclude": ["dist", "node_modules", "tsup.config.ts", "vitest.config.ts"],
-  "references": []
+  "references": [{ "path": "../core" }]
 }
