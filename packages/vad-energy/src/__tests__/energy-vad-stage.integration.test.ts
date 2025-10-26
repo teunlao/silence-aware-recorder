@@ -1,6 +1,6 @@
-import { Pipeline, type Frame, createSegmenterStage } from '@saraudio/core';
+import { createSegmenterStage, type Frame, Pipeline } from '@saraudio/core';
 import { describe, expect, it } from 'vitest';
-import { createEnergyVadStage } from './energy-vad-stage';
+import { createEnergyVadStage } from '../energy-vad-stage';
 
 const createIntegrationScenario = () => {
   const timeline: Array<{ event: string; payload: unknown }> = [];
@@ -48,16 +48,13 @@ describe('energy VAD integration', () => {
   it('drives segmenter to emit segment events from energy-based speech detection', () => {
     const { timeline, pushFrame, flush } = createIntegrationScenario();
 
-    // warmup silence
     pushFrame(0, 0);
     pushFrame(0, 10);
 
-    // speech burst above threshold
     pushFrame(0.02, 20);
     pushFrame(0.02, 30);
     pushFrame(0.015, 40);
 
-    // return to silence and wait for hangover completion
     pushFrame(0, 60);
     pushFrame(0, 70);
     pushFrame(0, 80);

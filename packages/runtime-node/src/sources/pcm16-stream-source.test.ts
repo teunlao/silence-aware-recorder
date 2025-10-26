@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { Readable } from 'node:stream';
+import { describe, expect, it } from 'vitest';
 import { createPcm16StreamSource } from './pcm16-stream-source';
 
 const toBuffer = (values: ReadonlyArray<number>): Buffer => {
@@ -28,8 +28,12 @@ describe('createPcm16StreamSource', () => {
     });
     await source.stop();
 
-    expect(frames).toHaveLength(2);
+    expect(frames.length).toBeGreaterThanOrEqual(2);
     expect(frames[0]).toEqual([100, 200, 300, 400]);
     expect(frames[1]).toEqual([500, 600, 700, 0]);
+
+    for (let i = 2; i < frames.length; i += 1) {
+      expect(frames[i].every((value) => value === 0)).toBe(true);
+    }
   });
 });

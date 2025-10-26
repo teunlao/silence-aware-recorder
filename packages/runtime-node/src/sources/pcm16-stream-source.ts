@@ -32,7 +32,7 @@ export const createPcm16StreamSource = (options: Pcm16StreamSourceOptions): Node
   let leftover: PcmBuffer = Buffer.alloc(0);
   let timestampMs = 0;
   let active = false;
-  let resolveStart: ((value: void) => void) | null = null;
+  let resolveStart: (() => void) | null = null;
   let rejectStart: ((reason: Error) => void) | null = null;
 
   const cleanup = () => {
@@ -44,6 +44,13 @@ export const createPcm16StreamSource = (options: Pcm16StreamSourceOptions): Node
 
   const finalize = () => {
     if (!active) return;
+    if (onFrameCallback) {
+      const trailing = Buffer.alloc(frameBytes);
+      const trailingFrames = 30;
+      for (let i = 0; i < trailingFrames; i += 1) {
+        emitFrame(trailing, onFrameCallback);
+      }
+    }
     active = false;
     cleanup();
     leftover = Buffer.alloc(0);

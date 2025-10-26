@@ -6,7 +6,5 @@
     "outDir": "dist"
   },
   "exclude": ["dist", "node_modules", "tsup.config.ts", "vitest.config.ts"],
-  "references": [
-    { "path": "../core" }
-  ]
+  "references": [{ "path": "../core" }]
 }

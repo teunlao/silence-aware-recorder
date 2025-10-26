@@ -1,5 +1,5 @@
-import type { Frame, Pipeline, Stage } from '@saraudio/core';
 import type { Readable } from 'node:stream';
+import type { Frame, Pipeline, Stage } from '@saraudio/core';
 
 export interface RuntimeLogger {
   info: (...messages: ReadonlyArray<unknown>) => void;
