@@ -7,6 +7,7 @@ export interface MediaRecorderSourceConfig {
   mimeType?: string;
   audioBitsPerSecond?: number;
   logger: RuntimeLogger;
+  onStream?: (stream: MediaStream | null) => void;
 }
 
 export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): BrowserFrameSource => {
@@ -19,6 +20,7 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
 
   const stopStream = () => {
     if (mediaStream) {
+      config.onStream?.(null);
       for (const track of mediaStream.getTracks()) {
         track.stop();
       }
@@ -72,6 +74,7 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
     };
 
     mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+    config.onStream?.(mediaStream);
     audioContext = new AudioContext();
     mediaRecorder = new MediaRecorder(mediaStream, {
       mimeType: config.mimeType,

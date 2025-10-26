@@ -107,6 +107,7 @@ export const createBrowserRuntime = (options?: BrowserRuntimeOptions): BrowserRu
         return createWorkletMicrophoneSource({
           constraints: sourceOptions?.constraints,
           ringBufferFrames: options?.worklet?.ringBufferFrames ?? 2048,
+          onStream: sourceOptions?.onStream,
           logger: services.logger,
         });
       } catch (error) {
@@ -117,6 +118,7 @@ export const createBrowserRuntime = (options?: BrowserRuntimeOptions): BrowserRu
           timesliceMs: options?.recorder?.timesliceMs ?? 100,
           mimeType: options?.recorder?.mimeType,
           audioBitsPerSecond: options?.recorder?.audioBitsPerSecond,
+          onStream: sourceOptions?.onStream,
           logger: services.logger,
         });
       }
@@ -127,6 +129,7 @@ export const createBrowserRuntime = (options?: BrowserRuntimeOptions): BrowserRu
       timesliceMs: options?.recorder?.timesliceMs ?? 100,
       mimeType: options?.recorder?.mimeType,
       audioBitsPerSecond: options?.recorder?.audioBitsPerSecond,
+      onStream: sourceOptions?.onStream,
       logger: services.logger,
     });
   };

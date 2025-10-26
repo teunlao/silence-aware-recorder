@@ -50,6 +50,7 @@ export interface BrowserFrameSource {
 export interface MicrophoneSourceOptions {
   constraints?: MediaTrackConstraints | MediaStreamConstraints['audio'];
   mode?: RuntimeMode;
+  onStream?: (stream: MediaStream | null) => void;
 }
 
 export interface RunOptions {

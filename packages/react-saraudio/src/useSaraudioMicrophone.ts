@@ -33,6 +33,7 @@ export interface UseSaraudioMicrophoneOptions {
   onStart?: () => void;
   onStop?: () => void;
   onError?: (error: Error) => void;
+  onStream?: (stream: MediaStream | null) => void;
 }
 
 export interface UseSaraudioMicrophoneResult {
@@ -44,7 +45,17 @@ export interface UseSaraudioMicrophoneResult {
 }
 
 export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): UseSaraudioMicrophoneResult => {
-  const { pipeline, runtime: runtimeOverride, constraints, mode, autoStart, onStart, onStop, onError } = options;
+  const {
+    pipeline,
+    runtime: runtimeOverride,
+    constraints,
+    mode,
+    autoStart,
+    onStart,
+    onStop,
+    onError,
+    onStream,
+  } = options;
 
   const runtime = useSaraudioRuntime(runtimeOverride);
   const pipelineRef = useRef(pipeline);
@@ -81,6 +92,7 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
       const sourceInstance = runtime.createMicrophoneSource({
         constraints,
         mode,
+        onStream,
       });
       setSource(sourceInstance);
 
@@ -93,10 +105,11 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
       setError(resolved);
       updateStatus('error');
       setSource(null);
+      onStream?.(null);
       onError?.(resolved);
       throw resolved;
     }
-  }, [constraints, frameHandler, mode, onError, onStart, runtime, updateStatus]);
+  }, [constraints, frameHandler, mode, onError, onStart, onStream, runtime, updateStatus]);
 
   const stop = useCallback(async () => {
     const activeSource = source;
@@ -122,8 +135,9 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
       throw resolved;
     } finally {
       setSource(null);
+      onStream?.(null);
     }
-  }, [onError, onStop, source, updateStatus]);
+  }, [onError, onStop, onStream, source, updateStatus]);
 
   useEffect(() => {
     if (!autoStart) {
