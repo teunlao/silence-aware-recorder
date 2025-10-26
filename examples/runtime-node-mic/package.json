@@ -1,0 +1,20 @@
+{
+  "name": "@saraudio/example-runtime-node-mic",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@saraudio/core": "workspace:*",
+    "@saraudio/runtime-node": "workspace:*",
+    "@saraudio/vad-energy": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "^4.19.1",
+    "typescript": "catalog:"
+  }
+}
