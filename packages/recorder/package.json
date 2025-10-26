@@ -9,18 +9,14 @@
   ],
   "exports": {
     ".": {
-      "types": "./src/server/index.ts",
-      "bun": "./src/server/index.ts",
-      "require": "./dist/server/index.js",
-      "default": "./dist/client/index.mjs",
-      "import": "./dist/client/index.mjs"
+      "types": "./src/lib/index.ts",
+      "import": "./dist/lib/index.mjs",
+      "require": "./dist/lib/index.js"
     },
     "./react": {
       "types": "./src/react/index.ts",
-      "bun": "./src/react/index.ts",
-      "require": "./dist/react/index.js",
-      "default": "./dist/react/index.mjs",
-      "import": "./dist/react/index.mjs"
+      "import": "./dist/react/index.mjs",
+      "require": "./dist/react/index.js"
     }
   },
   "scripts": {

@@ -1,13 +1,14 @@
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import SilenceAwareRecorder, {
   SilenceAwareRecorderOptions,
   OnVolumeChange,
   OnDataAvailable,
 } from './SilenceAwareRecorder';
 
-const mockOnVolumeChange: OnVolumeChange = jest.fn();
-const mockOnDataAvailable: OnDataAvailable = jest.fn();
+const mockOnVolumeChange: OnVolumeChange = vi.fn();
+const mockOnDataAvailable: OnDataAvailable = vi.fn();
 const deviceId = 'test-id';
-const gitoptions: SilenceAwareRecorderOptions = {
+const options: SilenceAwareRecorderOptions = {
   onVolumeChange: mockOnVolumeChange,
   onDataAvailable: mockOnDataAvailable,
   deviceId,
@@ -46,11 +47,11 @@ describe('SilenceAwareRecorder', () => {
   });
 
   test('stopRecording - when recording', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     recorder.isRecording = true;
     await recorder.stopRecording();
-    jest.advanceTimersByTime(100);
+    vi.advanceTimersByTime(100);
     expect(recorder.isRecording).toBe(false); // it should have stopped
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 });
