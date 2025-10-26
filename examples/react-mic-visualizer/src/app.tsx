@@ -49,7 +49,6 @@ export const App = () => {
 
   const [thresholdDb, setThresholdDb] = useState(-55);
   const [smoothMs, setSmoothMs] = useState(30);
-  const [logs, setLogs] = useState<string[]>([]);
   const [meterLevel, setMeterLevel] = useState(0);
   const [hasVadEvent, setHasVadEvent] = useState(false);
 
@@ -64,7 +63,7 @@ export const App = () => {
   });
 
   const appendLog = useCallback((message: string) => {
-    setLogs((prev) => [message, ...prev].slice(0, 20));
+    console.info('[saraudio][demo]', message);
   }, []);
 
   const enumerateAudioInputs = async () => {
@@ -117,7 +116,15 @@ export const App = () => {
   const handleStream = useCallback(
     (stream: MediaStream | null) => {
       teardownMeter();
-      if (!stream) return;
+      if (!stream) {
+        console.info('[saraudio][react] stream detached');
+        return;
+      }
+      const track = stream.getAudioTracks()[0];
+      console.info('[saraudio][react] stream attached', {
+        label: track?.label,
+        settings: track?.getSettings() ?? null,
+      });
       try {
         const ctx = new AudioContext();
         const sourceNode = ctx.createMediaStreamSource(stream);
@@ -150,10 +157,10 @@ export const App = () => {
         };
         tick();
       } catch (error) {
-        appendLog(`Audio meter setup failed: ${error instanceof Error ? error.message : String(error)}`);
+        console.error('[saraudio][react] audio meter setup failed', error);
       }
     },
-    [appendLog, teardownMeter],
+    [teardownMeter],
   );
 
   useEffect(() => {
@@ -196,13 +203,13 @@ export const App = () => {
     constraints: audioConstraints,
     onStream: handleStream,
     onError: (err) => {
-      appendLog(`Microphone error: ${err.message}`);
+      console.error('[saraudio][react] microphone error', err);
     },
     onStart: () => {
-      appendLog('useSaraudioMicrophone onStart fired');
+      console.info('[saraudio][react] microphone start');
     },
     onStop: () => {
-      appendLog('useSaraudioMicrophone onStop fired');
+      console.info('[saraudio][react] microphone stop');
     },
   });
 
@@ -242,11 +249,9 @@ export const App = () => {
   const previousStatusRef = useRef(status);
   useEffect(() => {
     if (status === 'running' && previousStatusRef.current !== 'running') {
-      appendLog('Microphone capture started.');
       setHasVadEvent(false);
     }
     if (status === 'idle' && previousStatusRef.current === 'running') {
-      appendLog('Microphone capture stopped.');
       teardownMeter();
     }
     previousStatusRef.current = status;
@@ -300,23 +305,15 @@ export const App = () => {
   const handleStartStop = useCallback(() => {
     if (isRunning) {
       appendLog('Stop requested');
-      void stop()
-        .then(() => {
-          appendLog('Stop promise resolved');
-        })
-        .catch((stopError) => {
-          appendLog(`Stop promise rejected: ${stopError instanceof Error ? stopError.message : String(stopError)}`);
-        });
+      void stop().catch((stopError) => {
+        console.error('[saraudio][react] stop failed', stopError);
+      });
       return;
     }
     appendLog('Start requested');
-    void start()
-      .then(() => {
-        appendLog('Start promise resolved');
-      })
-      .catch((startError) => {
-        appendLog(`Start promise rejected: ${startError instanceof Error ? startError.message : String(startError)}`);
-      });
+    void start().catch((startError) => {
+      console.error('[saraudio][react] start failed', startError);
+    });
   }, [appendLog, isRunning, start, stop]);
 
   return (
@@ -430,19 +427,6 @@ export const App = () => {
       <section className='segments'>
         <h2>Captured Segments (last {segments.length})</h2>
         <SegmentList segments={segments} />
-      </section>
-
-      <section className='debug'>
-        <h2>Debug Log</h2>
-        {logs.length === 0 ? (
-          <p className='placeholder'>Speak into the microphone to see VAD scores and segment events.</p>
-        ) : (
-          <ul className='debug-log'>
-            {logs.map((entry, index) => (
-              <li key={`${entry}-${index}`}>{entry}</li>
-            ))}
-          </ul>
-        )}
       </section>
 
       <footer>

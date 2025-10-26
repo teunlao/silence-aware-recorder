@@ -34,6 +34,7 @@ export interface UseSaraudioMicrophoneOptions {
   onStop?: () => void;
   onError?: (error: Error) => void;
   onStream?: (stream: MediaStream | null) => void;
+  onFrame?: (frame: Frame) => void;
 }
 
 export interface UseSaraudioMicrophoneResult {
@@ -55,6 +56,7 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
     onStop,
     onError,
     onStream,
+    onFrame,
   } = options;
 
   const runtime = useSaraudioRuntime(runtimeOverride);
@@ -78,8 +80,9 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
   const frameHandler = useMemo(() => {
     return (frame: Frame) => {
       pipelineRef.current.push(frame);
+      onFrame?.(frame);
     };
-  }, []);
+  }, [onFrame]);
 
   const startRef = useRef<(() => Promise<void>) | null>(null);
   const stopRef = useRef<(() => Promise<void>) | null>(null);
@@ -104,6 +107,7 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
       await sourceInstance.start(frameHandler);
 
       updateStatus('running');
+      console.info('[saraudio][react] microphone started');
       onStart?.();
     } catch (unknownError) {
       const resolved = toError(unknownError);
@@ -119,10 +123,7 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
 
   const stop = useCallback(async () => {
     const activeSource = sourceRef.current;
-    if (!activeSource) {
-      return;
-    }
-    if (statusRef.current === 'stopping') {
+    if (!activeSource || statusRef.current === 'stopping') {
       return;
     }
 
@@ -132,6 +133,7 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
       await activeSource.stop();
       pipelineRef.current.flush();
       updateStatus('idle');
+      console.info('[saraudio][react] microphone stopped');
       onStop?.();
     } catch (unknownError) {
       const resolved = toError(unknownError);

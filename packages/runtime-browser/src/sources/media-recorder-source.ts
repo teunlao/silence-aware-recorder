@@ -17,6 +17,7 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
   let isActive = false;
   let startTimestamp = 0;
   let basePlaybackTime: number | null = null;
+  let frameCount = 0;
 
   const stopStream = () => {
     if (mediaStream) {
@@ -56,7 +57,14 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
       video: false,
     };
 
+    config.logger.info('[browser-source] requesting media stream', constraints);
+
     mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+    config.logger.info('[browser-source] media stream acquired', {
+      trackSettings: mediaStream.getAudioTracks()[0]?.getSettings() ?? null,
+      trackLabel: mediaStream.getAudioTracks()[0]?.label ?? 'unknown',
+    });
+
     config.onStream?.(mediaStream);
     audioContext = new AudioContext();
     sourceNode = audioContext.createMediaStreamSource(mediaStream);
@@ -65,7 +73,7 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
       try {
         await audioContext.resume();
       } catch (resumeError) {
-        config.logger.warn('AudioContext resume failed', resumeError);
+        config.logger.warn('[browser-source] AudioContext resume failed', resumeError);
       }
     }
 
@@ -75,7 +83,7 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
     sinkNode = audioContext.createGain();
     sinkNode.gain.value = 0;
 
-    config.logger.info('MediaStream processor started', {
+    config.logger.info('[browser-source] processor started', {
       sampleRate: audioContext.sampleRate,
       channels,
       frameSize,
@@ -110,9 +118,22 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
       const playbackTime = event.playbackTime;
       if (basePlaybackTime === null) {
         basePlaybackTime = playbackTime;
+        config.logger.info('[browser-source] first frame baseline set', { playbackTime });
       }
       const relativeSeconds = playbackTime - (basePlaybackTime ?? playbackTime);
       const tsMs = startTimestamp + relativeSeconds * 1000;
+
+      frameCount += 1;
+      if (frameCount <= 10 || frameCount % 50 === 0) {
+        config.logger.info('[browser-source] frame captured', {
+          frameCount,
+          frameLength,
+          channelCount,
+          sampleRate: context.sampleRate,
+          tsMs,
+          firstSample: pcm[0] ?? 0,
+        });
+      }
 
       onFrame({
         pcm,
@@ -133,7 +154,7 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
     }
     isActive = false;
 
-    config.logger.info('Stopping MediaStream processor');
+    config.logger.info('[browser-source] stopping processor');
 
     if (processorNode) {
       processorNode.onaudioprocess = null;
@@ -151,8 +172,9 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
     stopStream();
     await closeAudioContext();
     basePlaybackTime = null;
+    frameCount = 0;
 
-    config.logger.info('MediaStream processor stopped');
+    config.logger.info('[browser-source] processor stopped');
   };
 
   return {

@@ -58,6 +58,21 @@ export class Pipeline {
     return this;
   }
 
+  reinitialize(): void {
+    for (let i = 0; i < this.stages.length; i += 1) {
+      const stage = this.stages[i];
+      const context: StageContext = {
+        emit: (event, payload) => {
+          this.events.emit(event, payload);
+        },
+        on: (event, handler) => this.events.on(event, handler),
+        now: () => this.now(),
+        createId: () => this.createId(),
+      };
+      stage.setup(context);
+    }
+  }
+
   push(frame: Frame): void {
     this.stages.forEach((stage) => {
       stage.handle(frame);
