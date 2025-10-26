@@ -5,6 +5,7 @@
     { "path": "packages/core" },
     { "path": "packages/vad-energy" },
     { "path": "packages/runtime-node" },
+    { "path": "packages/runtime-browser" },
     { "path": "packages/react-saraudio" }
   ]
 }

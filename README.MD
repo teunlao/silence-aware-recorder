@@ -8,6 +8,7 @@
 - `packages/utils` — DSP utilities (RMS, hysteresis, PCM helpers).
 - `packages/vad-energy` — energy-based VAD stage.
 - `packages/runtime-node` — Node/Bun runtime with DI-aware sources and sinks.
+- `packages/runtime-browser` — browser runtime (AudioWorklet or MediaRecorder) for getUserMedia pipelines.
 - `examples/runtime-node-mic` — interactive ffmpeg → VAD → segment CLI demo.
 - `.lab/` — design notes, decisions, research, roadmap (internal, Russian language).
 
