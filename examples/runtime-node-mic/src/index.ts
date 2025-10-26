@@ -1,6 +1,8 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import readline from 'node:readline';
+import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import type { Segment } from '@saraudio/core';
 import { createEnergyVadStage } from '@saraudio/vad-energy';
@@ -11,16 +13,79 @@ const CHANNELS = 1;
 const FRAME_SIZE = 160; // 10 ms
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const segmentsDir = resolve(__dirname, '../segments');
+const segmentsDir = resolve(__dirname, '../.segments');
 mkdirSync(segmentsDir, { recursive: true });
 
-const parseInputArgs = (): string[] => {
+interface InputConfig {
+  args: string[];
+  description: string;
+}
+
+interface ListedDevice {
+  index: number;
+  name: string;
+}
+
+const parseEnergyThreshold = (): number => {
+  const raw = process.env.ENERGY_THRESHOLD_DB;
+  if (!raw) return -55;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : -55;
+};
+
+const listAvfoundationAudioDevices = (): ListedDevice[] => {
+  const result = spawnSync('ffmpeg', ['-hide_banner', '-f', 'avfoundation', '-list_devices', 'true', '-i', ''], {
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
+  const lines = output.split('\n');
+  const devices: ListedDevice[] = [];
+  let inAudioSection = false;
+  const regex = /^\[AVFoundation[^\]]*\]\s*\[(\d+)\]\s(.+)$/;
+  for (const line of lines) {
+    if (line.includes('AVFoundation audio devices:')) {
+      inAudioSection = true;
+      continue;
+    }
+    if (line.includes('AVFoundation video devices:')) {
+      inAudioSection = false;
+    }
+    if (!inAudioSection) continue;
+    const match = line.match(regex);
+    if (match) {
+      devices.push({ index: Number(match[1]), name: match[2].trim() });
+    }
+  }
+  return devices;
+};
+
+const promptForAudioDevice = async (devices: ListedDevice[]): Promise<number | null> => {
+  if (!process.stdin.isTTY || devices.length === 0) return null;
+  console.log('Available audio devices (avfoundation):');
+  devices.forEach(({ index, name }) => {
+    console.log(`  [${index}] ${name}`);
+  });
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const answer = await rl.question('Select audio device index (Enter for default :0): ');
+  rl.close();
+  const trimmed = answer.trim();
+  if (trimmed === '') return null;
+  const parsed = Number(trimmed);
+  if (Number.isFinite(parsed)) return parsed;
+  console.warn(`Cannot parse "${answer}" as device index. Using default :0.`);
+  return null;
+};
+
+const resolveInputConfig = async (): Promise<InputConfig> => {
   const rawJson = process.env.FFMPEG_INPUT_ARGS;
   if (rawJson) {
     try {
       const parsed = JSON.parse(rawJson);
       if (Array.isArray(parsed) && parsed.every((value) => typeof value === 'string')) {
-        return parsed;
+        return {
+          args: parsed,
+          description: `custom args ${JSON.stringify(parsed)}`,
+        };
       }
       console.warn('FFMPEG_INPUT_ARGS must be a JSON array of strings. Using default values.');
     } catch (error) {
@@ -30,27 +95,45 @@ const parseInputArgs = (): string[] => {
 
   const platform = process.platform;
   if (platform === 'darwin') {
-    const device = process.env.FFMPEG_DEVICE ?? ':0';
-    return ['-f', 'avfoundation', '-i', device];
+    const envDevice = process.env.FFMPEG_DEVICE;
+    if (envDevice) {
+      return {
+        args: ['-f', 'avfoundation', '-i', envDevice],
+        description: `avfoundation device ${envDevice}`,
+      };
+    }
+    const devices = listAvfoundationAudioDevices();
+    const selected = await promptForAudioDevice(devices);
+    const device = selected !== null ? `:${selected}` : ':0';
+    return {
+      args: ['-f', 'avfoundation', '-i', device],
+      description: `avfoundation device ${device}`,
+    };
   }
   if (platform === 'linux') {
     const device = process.env.FFMPEG_DEVICE ?? 'default';
-    return ['-f', 'alsa', '-i', device];
+    return {
+      args: ['-f', 'alsa', '-i', device],
+      description: `alsa device ${device}`,
+    };
   }
   if (platform === 'win32') {
     const device = process.env.FFMPEG_DEVICE;
     if (!device) {
       throw new Error('For Windows, specify FFMPEG_DEVICE environment variable, e.g. audio="Microphone (USB)"');
     }
-    return ['-f', 'dshow', '-i', `audio=${device}`];
+    return {
+      args: ['-f', 'dshow', '-i', `audio=${device}`],
+      description: `dshow device ${device}`,
+    };
   }
   throw new Error(`Unknown platform ${platform}. Set FFMPEG_INPUT_ARGS manually.`);
 };
 
-const createFfmpegProcess = () => {
-  const inputArgs = parseInputArgs();
+const createFfmpegProcess = (inputConfig: InputConfig) => {
   const commonArgs = ['-ac', String(CHANNELS), '-ar', String(SAMPLE_RATE), '-f', 's16le', '-'];
-  const args = [...inputArgs, ...commonArgs];
+  const args = [...inputConfig.args, ...commonArgs];
+  console.log(`Using input device: ${inputConfig.description}`);
   const ffmpeg = spawn('ffmpeg', args, { stdio: ['ignore', 'pipe', 'pipe'] });
 
   ffmpeg.stderr.setEncoding('utf8');
@@ -77,14 +160,17 @@ const writeSegmentToFile = (segment: Segment, index: number): void => {
 const main = async () => {
   console.log('Starting ffmpeg… Press Ctrl+C to stop.');
 
-  const ffmpeg = createFfmpegProcess();
+  const inputConfig = await resolveInputConfig();
+  const ffmpeg = createFfmpegProcess(inputConfig);
   const runtime = createNodeRuntime();
   const pipeline = runtime.createPipeline({
-    stages: [createEnergyVadStage({ thresholdDb: -46, smoothMs: 20 })],
+    stages: [createEnergyVadStage({ thresholdDb: parseEnergyThreshold(), smoothMs: 20 })],
     segmenter: { preRollMs: 150, hangoverMs: 220 },
   });
 
   let segmentIndex = 0;
+
+  let lastVadLog = 0;
 
   pipeline.events.on('speechStart', ({ tsMs }) => {
     console.log(`speechStart @ ${tsMs.toFixed(0)} ms`);
@@ -99,6 +185,16 @@ const main = async () => {
     const { startMs, endMs, durationMs } = segment;
     console.log(`segment #${segmentIndex} ${startMs.toFixed(0)} → ${endMs.toFixed(0)} (duration ${durationMs.toFixed(0)} ms)`);
     writeSegmentToFile(segment, segmentIndex);
+  });
+
+  pipeline.events.on('vad', ({ score, speech, tsMs }) => {
+    const now = Date.now();
+    if (now - lastVadLog < 120) return;
+    lastVadLog = now;
+    const active = speech ? '#' : '.';
+    const bar = active.repeat(Math.round(score * 20)).padEnd(20, '.');
+    readline.cursorTo(process.stdout, 0);
+    process.stdout.write(`[${bar}] ${speech ? 'speech ' : 'silence'} score=${score.toFixed(2)} ts=${tsMs.toFixed(0)}   `);
   });
 
   const source = runtime.createPcm16StreamSource({

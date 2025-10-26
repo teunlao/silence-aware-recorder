@@ -8,3 +8,4 @@ node_modules
 dist
 .env
 *.tsbuildinfo
+examples/runtime-node-mic/.segments/
