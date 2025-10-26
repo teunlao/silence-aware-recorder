@@ -1,0 +1,49 @@
+{
+  "name": "@saraudio/react",
+  "version": "0.0.0",
+  "description": "React bindings for SARAUDIO pipeline",
+  "author": "SARAUDIO Team",
+  "license": "ISC",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.0.0",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "@vitest/ui": "catalog:",
+    "happy-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@saraudio/core": "workspace:*"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,105 +1,49 @@
-# SilenceAwareRecorder
+# SARAUDIO v3 — Multi-Source Audio Stack for AI Apps
 
-`SilenceAwareRecorder` is an audio recording utility for web environments. This library uses the Web Audio API to record audio, automatically detecting and managing periods of silence. In addition, a React Hook binding is provided for seamless integration with React-based applications.
+> ⚠️ The repository is undergoing a full reboot for the v3 architecture. The legacy `silence-aware-recorder` package has been archived; all new work happens under the modular `@saraudio/*` namespace.
 
-## Features
+## Monorepo Layout
 
-- Monitors the audio volume continuously and triggers a callback function whenever the volume changes.
-- Handles silent periods by stopping and starting the recording as sound is detected.
-- Provides recorded audio data chunks via a callback function.
-- Allows switching between audio input devices.
+- `packages/core` — pipeline engine (Pipeline, EventBus, Segmenter, buffers).
+- `packages/utils` — DSP utilities (RMS, hysteresis, PCM helpers).
+- `packages/vad-energy` — energy-based VAD stage.
+- `packages/runtime-node` — Node/Bun runtime with DI-aware sources and sinks.
+- `examples/runtime-node-mic` — interactive ffmpeg → VAD → segment CLI demo.
+- `.lab/` — design notes, decisions, research, roadmap (internal, Russian language).
 
-## Installation
+## Quick Start
 
-```shell
-npm install silence-aware-recorder
+```bash
+pnpm install
+pnpm typecheck
+pnpm lint
+pnpm test
 ```
 
-## Usage
+### Run the interactive mic example (macOS)
 
-### Standard JavaScript
-
-First, import `SilenceAwareRecorder`:
-
-```javascript
-import SilenceAwareRecorder from 'silence-aware-recorder';
+```bash
+pnpm --filter @saraudio/example-runtime-node-mic start
 ```
 
-Then create an instance of `SilenceAwareRecorder` with desired options:
+The CLI lists `avfoundation` devices, lets you pick an input, renders a live VAD bar, and saves PCM segments to `examples/runtime-node-mic/.segments/`.
 
-```javascript
-const recorder = new SilenceAwareRecorder({
-  onDataAvailable: (data) => console.log(data),
-  onVolumeChange: (volume) => console.log(volume),
-  silenceDuration: 2500,
-  silentThreshold: -50,
-  minDecibels: -100,
-});
-```
+See [`examples/runtime-node-mic/README.md`](examples/runtime-node-mic/README.md) for full usage, environment variables, and playback tips.
 
-Start recording with:
+## Current Focus
 
-```javascript
-recorder.startRecording();
-```
+- Lock down the plugin-based pipeline architecture (SOLID/GRASP/DI) documented in `.lab/designs`.
+- Ship the first v3 releases: Node runtime + energy VAD + segmenter.
+- Next milestones: browser bindings, React hooks, WASM/native accelerators.
 
-And stop recording with:
+## Legacy Snapshot
 
-```javascript
-recorder.stopRecording();
-```
-
-### React Hook
-
-You can use `useSilenceAwareRecorder` hook in your React application for seamless integration:
-
-```javascript
-import useSilenceAwareRecorder from 'silence-aware-recorder/react';
-
-const YourComponent = () => {
-  const { startRecording, stopRecording, isRecording, deviceId, setDevice } = useSilenceAwareRecorder({
-    onDataAvailable: (data) => console.log(data),
-    onVolumeChange: (volume) => console.log(volume),
-    silenceDuration: 2500,
-    silentThreshold: -50,
-    minDecibels: -100,
-  });
-
-  return (
-    <div>
-      <h3>Recording: {isRecording ? 'Is recording' : 'Is not recording'}</h3>
-      <button onClick={startRecording}>Start</button>
-      <button onClick={stopRecording}>Stop</button>
-    </div>
-  );
-};
-```
-
-## API
-
-### SilenceAwareRecorderOptions
-
-This is the options object that you can pass to the `SilenceAwareRecorder` constructor or the `useSilenceAwareRecorder` hook. It has the following optional properties:
-
-- `onDataAvailable`: Callback that is fired when audio data is available.
-- `onVolumeChange`: Callback that is fired when the volume changes.
-- `silenceDuration`: Duration of silence in milliseconds to wait before stopping the recording. Defaults to `2500`.
-- `silentThreshold`: Decibel level below which is considered silence. Defaults to `-50`.
-- `minDecibels`: The minimum power value in the scaling range for the FFT analysis data for conversion to decibels. Defaults to `-100`.
-- `deviceId`: The ID of the device to be used for recording.
-
-### `startRecording()`
-
-This method starts the recording process. It returns a promise that resolves when the recording has successfully started.
-
-### `stopRecording()`
-
-This method stops the recording process. It also ensures that all remaining audio data (not silence) is provided via the `onDataAvailable` callback before the recording is fully stopped.
-
-### `setDevice(deviceId)`
-
-This method allows switching the recording device by accepting a device ID.
+The deprecated browser recorder (`SilenceAwareRecorder` class and React hook) lives in `.lab/archive/recorder-legacy-2025-10-26/` for reference only and is not part of public builds.
 
 ## Contributing
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+- Follow the coding standards in `.lab/designs/coding-standards-2025-10-26.md`.
+- Workflow rule: after every code change run `pnpm typecheck`, `pnpm lint`, `pnpm test`.
+- Project discussions, roadmap, and research live in `.lab/`.
+
+SARAUDIO aims to become the go-to audio stack for AI-driven applications: multi-source input, pluggable processing (VAD, diarization, agent loops), and runtimes that span Node, browser, WASM, and native backends.
