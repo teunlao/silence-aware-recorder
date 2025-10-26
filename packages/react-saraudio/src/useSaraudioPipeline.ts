@@ -67,24 +67,31 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
     return instance;
   }, [runtime, stageList, segmenterConfig]);
 
-  const disposedRef = useRef(false);
+  const lastPipelineRef = useRef<Pipeline | null>(null);
+  const wasDisposedRef = useRef(false);
   const [isSpeech, setIsSpeech] = useState(false);
   const [lastVad, setLastVad] = useState<VADScore | null>(null);
   const [segments, setSegments] = useState<Segment[]>([]);
   const collectSegments = shouldCollectSegments(retainSegments);
 
   useEffect(() => {
-    disposedRef.current = false;
+    const samePipeline = lastPipelineRef.current === pipeline;
+
+    // React StrictMode: reinitialize stages after dispose on remount
+    if (samePipeline && wasDisposedRef.current) {
+      pipeline.reinitialize();
+    }
+
+    lastPipelineRef.current = pipeline;
+    wasDisposedRef.current = false;
+
     setIsSpeech(false);
     setLastVad(null);
     setSegments([]);
 
     return () => {
-      if (!disposedRef.current) {
-        pipeline.flush();
-        pipeline.dispose();
-        disposedRef.current = true;
-      }
+      pipeline.dispose();
+      wasDisposedRef.current = true;
     };
   }, [pipeline]);
 
@@ -140,12 +147,8 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
   }, [pipeline]);
 
   const dispose = useCallback(() => {
-    if (disposedRef.current) {
-      return;
-    }
     pipeline.flush();
     pipeline.dispose();
-    disposedRef.current = true;
   }, [pipeline]);
 
   const clearSegments = useCallback(() => {
