@@ -1,22 +1,6 @@
 import { EventBus } from './event-bus';
 import type { CoreError, Frame, Segment, VADScore } from './types';
 
-export interface Logger {
-  info(message: string, details?: Record<string, unknown>): void;
-  warn(message: string, details?: Record<string, unknown>): void;
-  error(message: string, details?: Record<string, unknown>): void;
-}
-
-const noop = (): void => {
-  // intentionally empty
-};
-
-const silentLogger: Logger = {
-  info: noop,
-  warn: noop,
-  error: noop,
-};
-
 export interface PipelineEvents extends Record<string, unknown> {
   vad: VADScore;
   speechStart: { tsMs: number };
@@ -28,7 +12,6 @@ export interface PipelineEvents extends Record<string, unknown> {
 export interface PipelineDependencies {
   now(): number;
   createId(): string;
-  logger?: Logger;
 }
 
 export interface StageContext {
@@ -36,7 +19,6 @@ export interface StageContext {
   on<K extends keyof PipelineEvents>(event: K, handler: (payload: PipelineEvents[K]) => void): () => void;
   now(): number;
   createId(): string;
-  logger: Logger;
 }
 
 export interface Stage {
@@ -56,12 +38,9 @@ export class Pipeline {
 
   private readonly createId: () => string;
 
-  private readonly logger: Logger;
-
   constructor(deps: PipelineDependencies) {
     this.now = deps.now;
     this.createId = deps.createId;
-    this.logger = deps.logger ?? silentLogger;
     this.events = new EventBus<PipelineEvents>();
   }
 
@@ -73,7 +52,6 @@ export class Pipeline {
       on: (event, handler) => this.events.on(event, handler),
       now: () => this.now(),
       createId: () => this.createId(),
-      logger: this.logger,
     };
     stage.setup(context);
     this.stages.push(stage);

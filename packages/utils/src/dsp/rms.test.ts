@@ -16,4 +16,3 @@ describe('rms', () => {
     expect(rms(values)).toBeCloseTo(Math.sqrt(0.25), 6);
   });
 });
-

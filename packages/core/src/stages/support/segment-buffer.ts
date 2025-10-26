@@ -20,13 +20,7 @@ export class SegmentBuffer {
     return this.chunks.length === 0;
   }
 
-  buildSegment(params: {
-    id: string;
-    startMs: number;
-    endMs: number;
-    sampleRate: number;
-    channels: number;
-  }): Segment {
+  buildSegment(params: { id: string; startMs: number; endMs: number; sampleRate: number; channels: number }): Segment {
     const totalSamples = this.chunks.reduce((sum, chunk) => sum + chunk.length, 0);
     const pcmInt16 = new Int16Array(totalSamples);
     let offset = 0;
@@ -47,4 +41,3 @@ export class SegmentBuffer {
     };
   }
 }
-

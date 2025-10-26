@@ -17,4 +17,3 @@ describe('createHysteresis', () => {
     expect(hysteresis(0.2, 120)).toBe(false); // hold expired
   });
 });
-
