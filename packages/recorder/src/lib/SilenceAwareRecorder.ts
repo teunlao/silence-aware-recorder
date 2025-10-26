@@ -1,5 +1,5 @@
 export type OnVolumeChange = (volume: number) => void;
-export type OnDataAvailable = (data: Blob) => void | undefined;
+export type OnDataAvailable = (data: Blob) => void;
 
 export interface SilenceAwareRecorderOptions {
 	deviceId?: string;
@@ -168,9 +168,13 @@ class SilenceAwareRecorder {
 	private cleanUp(): void {
 		if (this.mediaRecorder?.state === 'recording') {
 			this.mediaRecorder?.stop();
-			cancelAnimationFrame(this.animationFrameId!);
+			if (this.animationFrameId !== null) {
+				cancelAnimationFrame(this.animationFrameId);
+			}
 		}
-		this.mediaRecorder?.stream?.getTracks().forEach((track) => track.stop());
+		this.mediaRecorder?.stream?.getTracks().forEach((track) => {
+			track.stop();
+		});
 		this.audioContext?.close();
 		this.hasSoundStarted = false;
 		this.isRecording = false;

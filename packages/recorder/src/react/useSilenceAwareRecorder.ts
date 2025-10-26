@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import SilenceAwareRecorder, { type SilenceAwareRecorderOptions } from '../lib/SilenceAwareRecorder';
 
 const useSilenceAwareRecorder = (options: SilenceAwareRecorderOptions) => {
-	const { silenceDuration, silentThreshold, minDecibels, deviceId: initialDeviceId = 'default' } = options;
+	const { deviceId: initialDeviceId = 'default' } = options;
 	const [recorder, setRecorder] = useState<SilenceAwareRecorder | null>(null);
 	const [isRecording, setIsRecording] = useState<boolean>(false);
 	const [deviceId, setDeviceId] = useState<string>(initialDeviceId);
@@ -16,7 +16,7 @@ const useSilenceAwareRecorder = (options: SilenceAwareRecorderOptions) => {
 		return () => {
 			silenceAwareRecorder.stopRecording();
 		};
-	}, [silenceDuration, silentThreshold, minDecibels, deviceId]);
+	}, [deviceId, options]);
 
 	useEffect(() => {
 		if (recorder) {

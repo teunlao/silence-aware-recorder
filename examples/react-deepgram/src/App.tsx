@@ -28,7 +28,7 @@ const App = () => {
 
 	useEffect(() => {
 		setDevice(selectedDevice);
-	}, [selectedDevice]);
+	}, [selectedDevice, setDevice]);
 
 	useEffect(() => {
 		const connection = deepgramClient.listen.live({
@@ -78,9 +78,9 @@ const App = () => {
 				console.error(err);
 			});
 		});
-	}, []);
+	}, [deepgramClient.listen.live]);
 
-	const start = () => {
+	const _start = () => {
 		navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
 			console.log({ stream });
 			const mediaRecorder = new MediaRecorder(stream);
@@ -107,13 +107,12 @@ const App = () => {
 						setSelectedDevice(event.target.value);
 					}}
 				>
-					{availableDevices &&
-						availableDevices.map((device, index) => (
-							// eslint-disable-next-line react/no-array-index-key
-							<option key={device.deviceId + index} value={device.deviceId}>
-								{device.label || `Microphone ${device.label}`}
-							</option>
-						))}
+					{availableDevices?.map((device, index) => (
+						// eslint-disable-next-line react/no-array-index-key
+						<option key={device.deviceId + index} value={device.deviceId}>
+							{device.label || `Microphone ${device.label}`}
+						</option>
+					))}
 				</select>
 			</div>
 			<h3>Device ID: {deviceId.toString()} </h3>

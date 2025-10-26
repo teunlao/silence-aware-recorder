@@ -22,7 +22,7 @@ const App = () => {
 
 	useEffect(() => {
 		setDevice(selectedDevice);
-	}, [selectedDevice]);
+	}, [selectedDevice, setDevice]);
 
 	return (
 		<div>
@@ -35,13 +35,11 @@ const App = () => {
 						setSelectedDevice(event.target.value);
 					}}
 				>
-					{availableDevices &&
-						availableDevices.map((device, index) => (
-							// eslint-disable-next-line react/no-array-index-key
-							<option key={device.deviceId + index} value={device.deviceId}>
-								{device.label || `Microphone ${device.label}`}
-							</option>
-						))}
+					{availableDevices?.map((device, index) => (
+						<option key={device.deviceId + index} value={device.deviceId}>
+							{device.label || `Microphone ${device.label}`}
+						</option>
+					))}
 				</select>
 			</div>
 			<h3>Device ID: {deviceId.toString()} </h3>

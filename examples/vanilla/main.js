@@ -20,7 +20,7 @@ silenceAwareRecorder.onDataAvailable = (data) => {
 	console.log(data);
 
 	const audioURL = URL.createObjectURL(data);
-	const audio = new Audio(audioURL);
+	const _audio = new Audio(audioURL);
 
 	const audioItem = document.createElement('div');
 	audioItem.innerHTML = `
