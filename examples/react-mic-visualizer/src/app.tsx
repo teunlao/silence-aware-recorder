@@ -198,6 +198,12 @@ export const App = () => {
     onError: (err) => {
       appendLog(`Microphone error: ${err.message}`);
     },
+    onStart: () => {
+      appendLog('useSaraudioMicrophone onStart fired');
+    },
+    onStop: () => {
+      appendLog('useSaraudioMicrophone onStop fired');
+    },
   });
 
   const fallbackReason = useSaraudioFallbackReason();
@@ -221,19 +227,30 @@ export const App = () => {
   }, [pipeline]);
 
   const isRunning = status === 'running' || status === 'acquiring';
-  const meterPercent = Math.min(100, Math.round(Math.sqrt(meterLevel) * 250));
-  const levelDb = meterLevel > 0 ? (10 * Math.log10(meterLevel)).toFixed(1) : '-∞';
+  const meterPercent = Math.min(100, Math.round(meterLevel * 100));
+  const levelDb = meterLevel > 0 ? (20 * Math.log10(meterLevel)).toFixed(1) : '-∞';
+  const vadLabel = useMemo(() => {
+    if (hasVadEvent) {
+      return lastVad?.speech ? 'Speech detected' : 'Silence';
+    }
+    if (status === 'running') {
+      return 'Listening… waiting for speech';
+    }
+    return 'Silence';
+  }, [hasVadEvent, lastVad?.speech, status]);
 
   const previousStatusRef = useRef(status);
   useEffect(() => {
     if (status === 'running' && previousStatusRef.current !== 'running') {
       appendLog('Microphone capture started.');
+      setHasVadEvent(false);
     }
     if (status === 'idle' && previousStatusRef.current === 'running') {
       appendLog('Microphone capture stopped.');
+      teardownMeter();
     }
     previousStatusRef.current = status;
-  }, [appendLog, status]);
+  }, [appendLog, status, teardownMeter]);
 
   const previousFallbackRef = useRef<string | null>(null);
   useEffect(() => {
@@ -269,7 +286,7 @@ export const App = () => {
   }, [appendLog, enumerationError]);
 
   useEffect(() => {
-    if (status !== 'running' || lastVad) {
+    if (status !== 'running' || hasVadEvent) {
       return;
     }
     const timer = window.setTimeout(() => {
@@ -278,7 +295,29 @@ export const App = () => {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [appendLog, lastVad, status]);
+  }, [appendLog, hasVadEvent, status]);
+
+  const handleStartStop = useCallback(() => {
+    if (isRunning) {
+      appendLog('Stop requested');
+      void stop()
+        .then(() => {
+          appendLog('Stop promise resolved');
+        })
+        .catch((stopError) => {
+          appendLog(`Stop promise rejected: ${stopError instanceof Error ? stopError.message : String(stopError)}`);
+        });
+      return;
+    }
+    appendLog('Start requested');
+    void start()
+      .then(() => {
+        appendLog('Start promise resolved');
+      })
+      .catch((startError) => {
+        appendLog(`Start promise rejected: ${startError instanceof Error ? startError.message : String(startError)}`);
+      });
+  }, [appendLog, isRunning, start, stop]);
 
   return (
     <div className='app'>
@@ -345,7 +384,7 @@ export const App = () => {
           </div>
         </div>
         <div className='controls__buttons'>
-          <button type='button' onClick={() => (isRunning ? stop() : start())} disabled={status === 'stopping'}>
+          <button type='button' onClick={handleStartStop} disabled={status === 'stopping'}>
             {isRunning ? 'Stop' : 'Start'} microphone
           </button>
           <button type='button' onClick={() => clearSegments()} disabled={segments.length === 0}>
@@ -383,8 +422,8 @@ export const App = () => {
         ) : (
           <p className='placeholder'>Meter will update once audio chunks arrive. Adjust threshold if needed.</p>
         )}
-        <p className='badge' data-state={isSpeech ? 'speech' : 'silence'}>
-          {isSpeech ? 'Speech detected' : 'Silence'}
+        <p className='badge' data-state={hasVadEvent && isSpeech ? 'speech' : 'silence'}>
+          {vadLabel}
         </p>
       </section>
 

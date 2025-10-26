@@ -115,9 +115,7 @@ export const createBrowserRuntime = (options?: BrowserRuntimeOptions): BrowserRu
         options?.onFallback?.('worklet-unsupported');
         return createMediaRecorderSource({
           constraints: sourceOptions?.constraints,
-          timesliceMs: options?.recorder?.timesliceMs ?? 100,
-          mimeType: options?.recorder?.mimeType,
-          audioBitsPerSecond: options?.recorder?.audioBitsPerSecond,
+          frameSize: options?.recorder?.frameSize,
           onStream: sourceOptions?.onStream,
           logger: services.logger,
         });
@@ -126,9 +124,7 @@ export const createBrowserRuntime = (options?: BrowserRuntimeOptions): BrowserRu
 
     return createMediaRecorderSource({
       constraints: sourceOptions?.constraints,
-      timesliceMs: options?.recorder?.timesliceMs ?? 100,
-      mimeType: options?.recorder?.mimeType,
-      audioBitsPerSecond: options?.recorder?.audioBitsPerSecond,
+      frameSize: options?.recorder?.frameSize,
       onStream: sourceOptions?.onStream,
       logger: services.logger,
     });

@@ -25,9 +25,7 @@ export interface BrowserRuntimeOptions {
     ringBufferFrames?: number;
   };
   recorder?: {
-    timesliceMs?: number;
-    mimeType?: string;
-    audioBitsPerSecond?: number;
+    frameSize?: number;
   };
   onFallback?: (reason: FallbackReason) => void;
 }

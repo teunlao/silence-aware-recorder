@@ -60,6 +60,7 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
   const runtime = useSaraudioRuntime(runtimeOverride);
   const pipelineRef = useRef(pipeline);
   const statusRef = useRef<Status>('idle');
+  const sourceRef = useRef<BrowserFrameSource | null>(null);
 
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<Error | null>(null);
@@ -80,6 +81,9 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
     };
   }, []);
 
+  const startRef = useRef<(() => Promise<void>) | null>(null);
+  const stopRef = useRef<(() => Promise<void>) | null>(null);
+
   const start = useCallback(async () => {
     if (statusRef.current === 'acquiring' || statusRef.current === 'running') {
       return;
@@ -95,6 +99,7 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
         onStream,
       });
       setSource(sourceInstance);
+      sourceRef.current = sourceInstance;
 
       await sourceInstance.start(frameHandler);
 
@@ -105,6 +110,7 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
       setError(resolved);
       updateStatus('error');
       setSource(null);
+      sourceRef.current = null;
       onStream?.(null);
       onError?.(resolved);
       throw resolved;
@@ -112,7 +118,7 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
   }, [constraints, frameHandler, mode, onError, onStart, onStream, runtime, updateStatus]);
 
   const stop = useCallback(async () => {
-    const activeSource = source;
+    const activeSource = sourceRef.current;
     if (!activeSource) {
       return;
     }
@@ -135,9 +141,18 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
       throw resolved;
     } finally {
       setSource(null);
+      sourceRef.current = null;
       onStream?.(null);
     }
-  }, [onError, onStop, onStream, source, updateStatus]);
+  }, [onError, onStop, onStream, updateStatus]);
+
+  useEffect(() => {
+    startRef.current = start;
+  }, [start]);
+
+  useEffect(() => {
+    stopRef.current = stop;
+  }, [stop]);
 
   useEffect(() => {
     if (!autoStart) {
@@ -148,7 +163,7 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
 
     const run = async () => {
       try {
-        await start();
+        await startRef.current?.();
       } catch (errorDuringStart) {
         if (!cancelled) {
           setError(toError(errorDuringStart));
@@ -160,15 +175,15 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
 
     return () => {
       cancelled = true;
-      void stop();
+      void stopRef.current?.();
     };
-  }, [autoStart, start, stop]);
+  }, [autoStart]);
 
   useEffect(() => {
     return () => {
-      void stop();
+      void stopRef.current?.();
     };
-  }, [stop]);
+  }, []);
 
   return {
     status,

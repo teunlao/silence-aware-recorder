@@ -1,22 +1,22 @@
 import type { BrowserFrameSource, RuntimeLogger } from '../types';
-import { audioBufferToInterleavedFloat32, float32ToInt16 } from '../utils/audio';
+import { float32ToInt16 } from '../utils/audio';
 
 export interface MediaRecorderSourceConfig {
   constraints?: MediaStreamConstraints['audio'] | MediaTrackConstraints;
-  timesliceMs: number;
-  mimeType?: string;
-  audioBitsPerSecond?: number;
+  frameSize?: number;
   logger: RuntimeLogger;
   onStream?: (stream: MediaStream | null) => void;
 }
 
 export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): BrowserFrameSource => {
   let mediaStream: MediaStream | null = null;
-  let mediaRecorder: MediaRecorder | null = null;
   let audioContext: AudioContext | null = null;
-  let processingChain: Promise<void> = Promise.resolve();
+  let sourceNode: MediaStreamAudioSourceNode | null = null;
+  let processorNode: ScriptProcessorNode | null = null;
+  let sinkNode: GainNode | null = null;
   let isActive = false;
   let startTimestamp = 0;
+  let basePlaybackTime: number | null = null;
 
   const stopStream = () => {
     if (mediaStream) {
@@ -26,21 +26,6 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
       }
     }
     mediaStream = null;
-  };
-
-  const disposeRecorder = () => {
-    if (mediaRecorder) {
-      mediaRecorder.ondataavailable = null;
-      mediaRecorder.onerror = null;
-      if (mediaRecorder.state !== 'inactive') {
-        try {
-          mediaRecorder.stop();
-        } catch (error) {
-          config.logger.warn('MediaRecorder stop error', error);
-        }
-      }
-    }
-    mediaRecorder = null;
   };
 
   const closeAudioContext = async () => {
@@ -61,12 +46,10 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       throw new Error('mediaDevices.getUserMedia is not available in this environment');
     }
-    if (typeof MediaRecorder === 'undefined') {
-      throw new Error('MediaRecorder API is not available in this environment');
-    }
 
     isActive = true;
     startTimestamp = performance.now();
+    basePlaybackTime = null;
 
     const constraints: MediaStreamConstraints = {
       audio: config.constraints ?? true,
@@ -76,55 +59,72 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
     mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
     config.onStream?.(mediaStream);
     audioContext = new AudioContext();
-    mediaRecorder = new MediaRecorder(mediaStream, {
-      mimeType: config.mimeType,
-      audioBitsPerSecond: config.audioBitsPerSecond,
+    sourceNode = audioContext.createMediaStreamSource(mediaStream);
+
+    if (audioContext.state === 'suspended') {
+      try {
+        await audioContext.resume();
+      } catch (resumeError) {
+        config.logger.warn('AudioContext resume failed', resumeError);
+      }
+    }
+
+    const channels = sourceNode.channelCount;
+    const frameSize = Math.max(256, config.frameSize ?? 1024);
+    processorNode = audioContext.createScriptProcessor(frameSize, channels, channels);
+    sinkNode = audioContext.createGain();
+    sinkNode.gain.value = 0;
+
+    config.logger.info('MediaStream processor started', {
+      sampleRate: audioContext.sampleRate,
+      channels,
+      frameSize,
     });
 
-    let processedMs = 0;
-
-    mediaRecorder.ondataavailable = (event: BlobEvent) => {
-      if (!event.data || event.data.size === 0) {
+    processorNode.onaudioprocess = (event) => {
+      if (!isActive) {
         return;
       }
 
-      processingChain = processingChain
-        .then(async () => {
-          if (!audioContext) {
-            return;
-          }
+      const input = event.inputBuffer;
+      const frameLength = input.length;
+      const channelCount = input.numberOfChannels;
+      const context = audioContext;
+      if (!context) {
+        return;
+      }
+      const interleaved = new Float32Array(frameLength * channelCount);
+      const channelData: Float32Array[] = [];
 
-          let buffer: AudioBuffer;
-          try {
-            const arrayBuffer = await event.data.arrayBuffer();
-            buffer = await audioContext.decodeAudioData(arrayBuffer);
-          } catch (error) {
-            config.logger.warn('Failed to decode MediaRecorder chunk', error);
-            return;
-          }
+      for (let channel = 0; channel < channelCount; channel += 1) {
+        channelData.push(input.getChannelData(channel));
+      }
 
-          const interleaved = audioBufferToInterleavedFloat32(buffer);
-          const pcm = float32ToInt16(interleaved.data);
-          const tsMs = startTimestamp + processedMs;
-          processedMs += (buffer.length / buffer.sampleRate) * 1000;
+      for (let sample = 0; sample < frameLength; sample += 1) {
+        for (let channel = 0; channel < channelCount; channel += 1) {
+          interleaved[sample * channelCount + channel] = channelData[channel]?.[sample] ?? 0;
+        }
+      }
 
-          onFrame({
-            pcm,
-            tsMs,
-            sampleRate: interleaved.sampleRate,
-            channels: interleaved.channels as 1 | 2,
-          });
-        })
-        .catch((error) => {
-          config.logger.error('Error processing MediaRecorder chunk', error);
-        });
+      const pcm = float32ToInt16(interleaved);
+      const playbackTime = event.playbackTime;
+      if (basePlaybackTime === null) {
+        basePlaybackTime = playbackTime;
+      }
+      const relativeSeconds = playbackTime - (basePlaybackTime ?? playbackTime);
+      const tsMs = startTimestamp + relativeSeconds * 1000;
+
+      onFrame({
+        pcm,
+        tsMs,
+        sampleRate: context.sampleRate,
+        channels: (channelCount === 1 ? 1 : 2) as 1 | 2,
+      });
     };
 
-    mediaRecorder.onerror = (event) => {
-      config.logger.error('MediaRecorder error', event);
-    };
-
-    mediaRecorder.start(config.timesliceMs);
+    sourceNode.connect(processorNode);
+    processorNode.connect(sinkNode);
+    sinkNode.connect(audioContext.destination);
   };
 
   const stop: BrowserFrameSource['stop'] = async () => {
@@ -133,12 +133,26 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
     }
     isActive = false;
 
-    disposeRecorder();
+    config.logger.info('Stopping MediaStream processor');
+
+    if (processorNode) {
+      processorNode.onaudioprocess = null;
+      processorNode.disconnect();
+    }
+    if (sourceNode) {
+      sourceNode.disconnect();
+    }
+    if (sinkNode) {
+      sinkNode.disconnect();
+      sinkNode = null;
+    }
+    processorNode = null;
+    sourceNode = null;
     stopStream();
-    await processingChain.catch((error) => {
-      config.logger.error('Error finishing MediaRecorder processing', error);
-    });
     await closeAudioContext();
+    basePlaybackTime = null;
+
+    config.logger.info('MediaStream processor stopped');
   };
 
   return {
