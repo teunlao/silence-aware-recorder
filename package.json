@@ -1,44 +1,44 @@
 {
-	"name": "@silence-aware-recorder/root",
-	"author": "teunlao (https://github.com/teunlao)",
-	"version": "2.0.0",
-	"description": "Audio control with silence detection.",
-	"keywords": [],
-	"license": "ISC",
-	"scripts": {
-		"lint": "biome check .",
-		"lint:fix": "biome check --write .",
-		"format": "biome format --write ."
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^2.0.0",
-		"typescript": "^5.9.3"
-	},
-	"tsup": {
-		"entry": [
-			"src/lib/index.ts",
-			"src/react/index.ts"
-		],
-		"treeshake": true,
-		"sourcemap": "inline",
-		"minify": true,
-		"clean": true,
-		"dts": true,
-		"splitting": false,
-		"format": [
-			"cjs",
-			"esm"
-		],
-		"external": [
-			"react"
-		]
-	},
-	"files": [
-		"dist",
-		"README.md"
-	],
-	"exports": {
-		".": "./dist/lib/index.js",
-		"./react": "./dist/react/index.js"
-	}
+  "name": "@silence-aware-recorder/root",
+  "author": "teunlao (https://github.com/teunlao)",
+  "version": "2.0.0",
+  "description": "Audio control with silence detection.",
+  "keywords": [],
+  "license": "ISC",
+  "scripts": {
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "typescript": "^5.9.3"
+  },
+  "tsup": {
+    "entry": [
+      "src/lib/index.ts",
+      "src/react/index.ts"
+    ],
+    "treeshake": true,
+    "sourcemap": "inline",
+    "minify": true,
+    "clean": true,
+    "dts": true,
+    "splitting": false,
+    "format": [
+      "cjs",
+      "esm"
+    ],
+    "external": [
+      "react"
+    ]
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./dist/lib/index.js",
+    "./react": "./dist/react/index.js"
+  }
 }
