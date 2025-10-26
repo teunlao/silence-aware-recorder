@@ -1,3 +1,23 @@
- packages:
+packages:
   - "examples/*"
   - "packages/*"
+
+catalog:
+  # Build tools
+  typescript: ^5.9.3
+  tsup: ^8.5.0
+
+  # Testing
+  vitest: ^4.0.3
+  "@vitest/coverage-v8": ^4.0.3
+  "@vitest/ui": ^4.0.3
+  happy-dom: ^20.0.8
+
+  # Types
+  "@types/node": ^24.9.1
+  "@types/react": ^19.2.2
+  "@types/react-dom": ^19.2.2
+
+  # React (peer deps for recorder)
+  react: ^19.2.0
+  react-dom: ^19.2.0

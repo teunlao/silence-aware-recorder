@@ -3,8 +3,7 @@
   "compilerOptions": {
     "composite": true,
     "rootDir": "src",
-    "outDir": "dist",
-    "jsx": "react-jsx"
+    "outDir": "dist"
   },
   "exclude": ["dist", "node_modules", "tsup.config.ts", "vitest.config.ts"],
   "references": []

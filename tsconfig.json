@@ -1,12 +1,8 @@
 {
-  "compilerOptions": {
-    "esModuleInterop": true,
-    "jsx": "react-jsx",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "lib": ["DOM", "ES2015"]
-  }
+  "files": [],
+  "references": [
+    { "path": "packages/utils" },
+    { "path": "packages/core" },
+    { "path": "packages/recorder" }
+  ]
 }
