@@ -12,33 +12,31 @@ app.innerHTML = `
 `;
 
 const silenceAwareRecorder = new SilenceAwareRecorder({
-  silenceDuration: 2000,
-  silenceThreshold: -50,
+	silenceDuration: 2000,
+	silenceThreshold: -50,
 });
 
 silenceAwareRecorder.onDataAvailable = (data) => {
-  console.log(data);
+	console.log(data);
 
-  const audioURL = URL.createObjectURL(data);
-  const audio = new Audio(audioURL);
+	const audioURL = URL.createObjectURL(data);
+	const audio = new Audio(audioURL);
 
-  const audioItem = document.createElement('div');
-  audioItem.innerHTML = `
+	const audioItem = document.createElement('div');
+	audioItem.innerHTML = `
     <audio controls src="${audioURL}"></audio>
   `;
-  document.querySelector('#audio-list').appendChild(audioItem);
+	document.querySelector('#audio-list').appendChild(audioItem);
 };
 
 silenceAwareRecorder.onVolumeChange = (volume) => {
-  document.querySelector('#volume').innerHTML = `Volume: ${volume.toFixed(
-    2
-  )} dB`;
+	document.querySelector('#volume').innerHTML = `Volume: ${volume.toFixed(2)} dB`;
 };
 
 document.querySelector('#startButton').addEventListener('click', () => {
-  silenceAwareRecorder.startRecording();
+	silenceAwareRecorder.startRecording();
 });
 
 document.querySelector('#stopButton').addEventListener('click', () => {
-  silenceAwareRecorder.stopRecording();
+	silenceAwareRecorder.stopRecording();
 });

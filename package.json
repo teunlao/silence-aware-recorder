@@ -1,60 +1,44 @@
 {
-  "name": "@silence-aware-recorder/root",
-  "author": "teunlao (https://github.com/teunlao)",
-  "version": "2.0.0",
-  "description": "Audio control with silence detection.",
-  "keywords": [],
-  "license": "ISC",
-  "devDependencies": {
-    "@types/jest": "^29.5.2",
-    "@types/node": "18.16.9",
-    "@types/react": "18.2.74",
-    "@types/react-dom": "18.2.24",
-    "@typescript-eslint/eslint-plugin": "^5.60.0",
-    "eslint": "8.40.0",
-    "eslint-config-airbnb": "19.0.4",
-    "eslint-config-prettier": "8.8.0",
-    "eslint-plugin-import": "2.27.5",
-    "eslint-plugin-jsx-a11y": "6.7.1",
-    "eslint-plugin-prefer-arrow": "1.2.3",
-    "eslint-plugin-prettier": "4.2.1",
-    "eslint-plugin-react": "7.32.2",
-    "eslint-plugin-react-hooks": "4.6.0",
-    "eslint-plugin-storybook": "0.6.12",
-    "eslint-plugin-typescript-sort-keys": "2.3.0",
-    "eslint-plugin-unused-imports": "2.0.0",
-    "jest": "^29.5.0",
-    "prettier": "^2.8.8",
-    "ts-jest": "^29.1.0",
-    "ts-node": "^10.9.2",
-    "tsup": "^8.5.0",
-    "typescript": "^5.9.3"
-  },
-  "tsup": {
-    "entry": [
-      "src/lib/index.ts",
-      "src/react/index.ts"
-    ],
-    "treeshake": true,
-    "sourcemap": "inline",
-    "minify": true,
-    "clean": true,
-    "dts": true,
-    "splitting": false,
-    "format": [
-      "cjs",
-      "esm"
-    ],
-    "external": [
-      "react"
-    ]
-  },
-  "files": [
-    "dist",
-    "README.md"
-  ],
-  "exports": {
-    ".": "./dist/lib/index.js",
-    "./react": "./dist/react/index.js"
-  }
+	"name": "@silence-aware-recorder/root",
+	"author": "teunlao (https://github.com/teunlao)",
+	"version": "2.0.0",
+	"description": "Audio control with silence detection.",
+	"keywords": [],
+	"license": "ISC",
+	"scripts": {
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"format": "biome format --write ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.0.0",
+		"typescript": "^5.9.3"
+	},
+	"tsup": {
+		"entry": [
+			"src/lib/index.ts",
+			"src/react/index.ts"
+		],
+		"treeshake": true,
+		"sourcemap": "inline",
+		"minify": true,
+		"clean": true,
+		"dts": true,
+		"splitting": false,
+		"format": [
+			"cjs",
+			"esm"
+		],
+		"external": [
+			"react"
+		]
+	},
+	"files": [
+		"dist",
+		"README.md"
+	],
+	"exports": {
+		".": "./dist/lib/index.js",
+		"./react": "./dist/react/index.js"
+	}
 }

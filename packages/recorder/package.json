@@ -1,86 +1,73 @@
 {
-  "name": "silence-aware-recorder",
-  "author": "teunlao (https://github.com/teunlao)",
-  "version": "2.0.1",
-  "description": "Audio control with silence detection.",
-  "files": [
-    "dist",
-    "src"
-  ],
-  "exports": {
-    ".": {
-      "types": "./src/lib/index.ts",
-      "import": "./dist/lib/index.mjs",
-      "require": "./dist/lib/index.js"
-    },
-    "./react": {
-      "types": "./src/react/index.ts",
-      "import": "./dist/react/index.mjs",
-      "require": "./dist/react/index.js"
-    }
-  },
-  "scripts": {
-    "dev": "tsup --watch",
-    "build": "tsup",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
-  },
-  "peerDependencies": {
-    "react": "^18.0.0 || ^19.0.0"
-  },
-  "keywords": [
-    "record",
-    "audio",
-    "silence",
-    "whisper",
-    "live",
-    "realtime"
-  ],
-  "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^24.9.1",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
-    "@typescript-eslint/eslint-plugin": "^8.46.2",
-    "@vitest/ui": "^4.0.3",
-    "@vitest/coverage-v8": "^4.0.3",
-    "eslint": "^9.38.0",
-    "eslint-config-airbnb": "^19.0.4",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-prefer-arrow": "^1.2.3",
-    "eslint-plugin-prettier": "^5.5.4",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-typescript-sort-keys": "^3.3.0",
-    "eslint-plugin-unused-imports": "^4.3.0",
-    "happy-dom": "^20.0.8",
-    "prettier": "^3.6.2",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "tsup": "^8.5.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.3"
-  },
-  "tsup": {
-    "entry": [
-      "src/lib/index.ts",
-      "src/react/index.ts"
-    ],
-    "treeshake": true,
-    "sourcemap": "inline",
-    "minify": true,
-    "clean": true,
-    "dts": true,
-    "splitting": false,
-    "format": [
-      "cjs",
-      "esm"
-    ],
-    "external": [
-      "react"
-    ]
-  }
+	"name": "silence-aware-recorder",
+	"author": "teunlao (https://github.com/teunlao)",
+	"version": "2.0.1",
+	"description": "Audio control with silence detection.",
+	"files": [
+		"dist",
+		"src"
+	],
+	"exports": {
+		".": {
+			"types": "./src/lib/index.ts",
+			"import": "./dist/lib/index.mjs",
+			"require": "./dist/lib/index.js"
+		},
+		"./react": {
+			"types": "./src/react/index.ts",
+			"import": "./dist/react/index.mjs",
+			"require": "./dist/react/index.js"
+		}
+	},
+	"scripts": {
+		"dev": "tsup --watch",
+		"build": "tsup",
+		"test": "vitest",
+		"test:ui": "vitest --ui",
+		"test:coverage": "vitest --coverage"
+	},
+	"peerDependencies": {
+		"react": "^18.0.0 || ^19.0.0"
+	},
+	"keywords": [
+		"record",
+		"audio",
+		"silence",
+		"whisper",
+		"live",
+		"realtime"
+	],
+	"license": "ISC",
+	"devDependencies": {
+		"@types/node": "^24.9.1",
+		"@types/react": "^19.2.2",
+		"@types/react-dom": "^19.2.2",
+		"@vitest/coverage-v8": "^4.0.3",
+		"@vitest/ui": "^4.0.3",
+		"happy-dom": "^20.0.8",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0",
+		"tsup": "^8.5.0",
+		"typescript": "^5.9.3",
+		"vitest": "^4.0.3"
+	},
+	"tsup": {
+		"entry": [
+			"src/lib/index.ts",
+			"src/react/index.ts"
+		],
+		"treeshake": true,
+		"sourcemap": "inline",
+		"minify": true,
+		"clean": true,
+		"dts": true,
+		"splitting": false,
+		"format": [
+			"cjs",
+			"esm"
+		],
+		"external": [
+			"react"
+		]
+	}
 }
