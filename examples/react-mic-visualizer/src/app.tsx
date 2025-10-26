@@ -62,9 +62,6 @@ export const App = () => {
     raf: null,
   });
 
-  const appendLog = useCallback((message: string) => {
-    console.info('[saraudio][demo]', message);
-  }, []);
 
   const enumerateAudioInputs = async () => {
     if (!navigator.mediaDevices?.enumerateDevices) {
@@ -117,14 +114,8 @@ export const App = () => {
     (stream: MediaStream | null) => {
       teardownMeter();
       if (!stream) {
-        console.info('[saraudio][react] stream detached');
         return;
       }
-      const track = stream.getAudioTracks()[0];
-      console.info('[saraudio][react] stream attached', {
-        label: track?.label,
-        settings: track?.getSettings() ?? null,
-      });
       try {
         const ctx = new AudioContext();
         const sourceNode = ctx.createMediaStreamSource(stream);
@@ -156,12 +147,10 @@ export const App = () => {
           state.raf = requestAnimationFrame(tick);
         };
         tick();
-      } catch (error) {
-        console.error('[saraudio][react] audio meter setup failed', error);
+      } catch {
+        // Failed to setup meter, ignore
       }
-    },
-    [teardownMeter],
-  );
+    }, [teardownMeter]);
 
   useEffect(() => {
     void enumerateAudioInputs();
@@ -202,34 +191,16 @@ export const App = () => {
     pipeline,
     constraints: audioConstraints,
     onStream: handleStream,
-    onError: (err) => {
-      console.error('[saraudio][react] microphone error', err);
-    },
-    onStart: () => {
-      console.info('[saraudio][react] microphone start');
-    },
-    onStop: () => {
-      console.info('[saraudio][react] microphone stop');
-    },
   });
 
   const fallbackReason = useSaraudioFallbackReason();
 
   useEffect(() => {
-    const unsubscribeVad = pipeline.events.on('vad', ({ score, speech, tsMs }) => {
+    const unsubscribeVad = pipeline.events.on('vad', () => {
       setHasVadEvent(true);
-      appendLog(`${tsMs.toFixed(0)}ms · score ${score.toFixed(2)} · ${speech ? 'SPEECH' : 'silence'}`);
-    });
-    const unsubscribeSegment = pipeline.events.on('segment', (segment) => {
-      appendLog(
-        `${segment.startMs.toFixed(0)}-${segment.endMs.toFixed(0)}ms · segment captured (${(
-          segment.durationMs / 1000
-        ).toFixed(2)}s)`,
-      );
     });
     return () => {
       unsubscribeVad();
-      unsubscribeSegment();
     };
   }, [pipeline]);
 
@@ -255,66 +226,16 @@ export const App = () => {
       teardownMeter();
     }
     previousStatusRef.current = status;
-  }, [appendLog, status, teardownMeter]);
+  }, [status, teardownMeter]);
 
-  const previousFallbackRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (fallbackReason && fallbackReason !== previousFallbackRef.current) {
-      appendLog(`Runtime fallback active: ${fallbackReason}`);
-    }
-    if (!fallbackReason && previousFallbackRef.current) {
-      appendLog('Runtime switched to worklet mode.');
-    }
-    previousFallbackRef.current = fallbackReason ?? null;
-  }, [appendLog, fallbackReason]);
-
-  const previousErrorRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (error?.message && error.message !== previousErrorRef.current) {
-      appendLog(`Runtime error: ${error.message}`);
-      previousErrorRef.current = error.message;
-    }
-    if (!error) {
-      previousErrorRef.current = null;
-    }
-  }, [appendLog, error]);
-
-  const previousEnumerationErrorRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (enumerationError && enumerationError !== previousEnumerationErrorRef.current) {
-      appendLog(`Device enumeration issue: ${enumerationError}`);
-      previousEnumerationErrorRef.current = enumerationError;
-    }
-    if (!enumerationError) {
-      previousEnumerationErrorRef.current = null;
-    }
-  }, [appendLog, enumerationError]);
-
-  useEffect(() => {
-    if (status !== 'running' || hasVadEvent) {
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      appendLog('No VAD events yet. Try lowering the threshold or switching devices.');
-    }, 5000);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [appendLog, hasVadEvent, status]);
 
   const handleStartStop = useCallback(() => {
     if (isRunning) {
-      appendLog('Stop requested');
-      void stop().catch((stopError) => {
-        console.error('[saraudio][react] stop failed', stopError);
-      });
+      void stop();
       return;
     }
-    appendLog('Start requested');
-    void start().catch((startError) => {
-      console.error('[saraudio][react] start failed', startError);
-    });
-  }, [appendLog, isRunning, start, stop]);
+    void start();
+  }, [isRunning, start, stop]);
 
   return (
     <div className='app'>

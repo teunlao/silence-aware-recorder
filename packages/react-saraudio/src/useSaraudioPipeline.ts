@@ -90,22 +90,18 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
 
   useEffect(() => {
     const unsubscribeVad = pipeline.events.on('vad', (payload: VADScore) => {
-      console.info('[saraudio][pipeline] vad', payload);
       setLastVad(payload);
     });
 
     const unsubscribeSpeechStart = pipeline.events.on('speechStart', () => {
-      console.info('[saraudio][pipeline] speechStart');
       setIsSpeech(true);
     });
 
     const unsubscribeSpeechEnd = pipeline.events.on('speechEnd', () => {
-      console.info('[saraudio][pipeline] speechEnd');
       setIsSpeech(false);
     });
 
     const unsubscribeSegment = pipeline.events.on('segment', (segmentPayload: Segment) => {
-      console.info('[saraudio][pipeline] segment', segmentPayload);
       onSegment?.(segmentPayload);
       if (!collectSegments) {
         return;

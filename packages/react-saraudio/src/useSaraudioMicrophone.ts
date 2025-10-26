@@ -107,7 +107,6 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
       await sourceInstance.start(frameHandler);
 
       updateStatus('running');
-      console.info('[saraudio][react] microphone started');
       onStart?.();
     } catch (unknownError) {
       const resolved = toError(unknownError);
@@ -133,7 +132,6 @@ export const useSaraudioMicrophone = (options: UseSaraudioMicrophoneOptions): Us
       await activeSource.stop();
       pipelineRef.current.flush();
       updateStatus('idle');
-      console.info('[saraudio][react] microphone stopped');
       onStop?.();
     } catch (unknownError) {
       const resolved = toError(unknownError);

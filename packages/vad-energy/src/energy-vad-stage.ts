@@ -30,7 +30,6 @@ export function createEnergyVadStage(options: EnergyVadOptions = {}): Stage {
 
   let context: StageContext | null = null;
   let state: VadState = createInitialState();
-  let debugCounter = 0;
 
   const toFloat32 = (pcm: Frame['pcm']): Float32Array => (pcm instanceof Float32Array ? pcm : int16ToFloat32(pcm));
 
@@ -51,7 +50,6 @@ export function createEnergyVadStage(options: EnergyVadOptions = {}): Stage {
     setup(ctx) {
       context = ctx;
       state = createInitialState();
-      debugCounter = 0;
     },
     handle(frame) {
       if (!context) return;
@@ -64,20 +62,6 @@ export function createEnergyVadStage(options: EnergyVadOptions = {}): Stage {
       const score = Math.min(1, Math.max(0, (smoothedDb - floorDb) / (ceilingDb - floorDb)));
       const speech = smoothedDb >= thresholdDb;
 
-      if (debugCounter < 50 || debugCounter % 200 === 0) {
-        console.info('[saraudio][vad-energy]', {
-          frameIndex: debugCounter,
-          tsMs: frame.tsMs,
-          rms,
-          db: currentDb,
-          smoothedDb,
-          thresholdDb,
-          score,
-          speech,
-        });
-      }
-      debugCounter += 1;
-
       context.emit('vad', { tsMs: frame.tsMs, score, speech });
     },
     flush() {
@@ -85,7 +69,6 @@ export function createEnergyVadStage(options: EnergyVadOptions = {}): Stage {
     },
     teardown() {
       state = createInitialState();
-      debugCounter = 0;
       context = null;
     },
   };
