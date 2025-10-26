@@ -3,6 +3,7 @@
   "references": [
     { "path": "packages/utils" },
     { "path": "packages/core" },
+    { "path": "packages/vad-energy" },
     { "path": "packages/recorder" }
   ]
 }

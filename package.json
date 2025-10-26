@@ -14,6 +14,7 @@
     "build": "turbo build",
     "dev": "turbo dev --no-cache --continue",
     "lint": "turbo lint",
+    "lint:fix": "biome check --write .",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "clean": "turbo clean",
