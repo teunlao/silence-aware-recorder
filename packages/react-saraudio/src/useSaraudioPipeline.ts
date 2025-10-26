@@ -49,8 +49,7 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
 
   const stageList = useMemo(() => {
     const previous = stageSnapshotRef.current;
-    const sameList =
-      previous.length === stages.length && previous.every((stage, index) => stage === stages[index]);
+    const sameList = previous.length === stages.length && previous.every((stage, index) => stage === stages[index]);
     if (sameList) {
       return previous;
     }

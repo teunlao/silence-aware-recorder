@@ -1,0 +1,27 @@
+{
+  "name": "@saraudio/example-react-mic-visualizer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --project tsconfig.app.json --noEmit",
+    "lint": "biome check src"
+  },
+  "dependencies": {
+    "@saraudio/core": "workspace:*",
+    "@saraudio/react": "workspace:*",
+    "@saraudio/vad-energy": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "catalog:",
+    "vite": "^7.0.0"
+  }
+}
