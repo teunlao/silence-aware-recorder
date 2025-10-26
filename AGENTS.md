@@ -1,7 +1,9 @@
 # For AI Agents
 
-**Project:** Browser audio recording with silence detection. TypeScript + React.
+**Project:** SARAUDIO - Multi-source audio stack for AI apps.
 
-**Main exports:** `SilenceAwareRecorder` class, `useSilenceAwareRecorder` hook.
+**Read `.lab/` first** - context, vision, decisions.
 
-**Read `.lab/` first** - contains project context and direction.
+**Coding:** `.lab/designs/coding-standards-2025-10-26.md` - NO `any`, minimize `as`.
+
+**Workflow:** `.lab/designs/development-workflow-2025-10-26.md` - после КАЖДОГО изменения: typecheck → lint → test.

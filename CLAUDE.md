@@ -1,7 +1,11 @@
 # For Claude
 
-**Project:** Browser audio recording library with automatic silence detection.
+**Project:** SARAUDIO - Multi-source audio stack for AI-native apps.
 
-**Core:** Records audio, stops/resumes on silence. TypeScript class + React Hook.
+**Core:** AudioWorklet pipeline, VAD, multi-source (mic + desktop).
 
-**Start here:** `.lab/` directory - project context and active work.
+**Start here:** `.lab/` - context and active work.
+
+**Coding:** `.lab/designs/coding-standards-2025-10-26.md` - NO `any`, minimize `as`.
+
+**Workflow:** `.lab/designs/development-workflow-2025-10-26.md` - после КАЖДОГО изменения: typecheck → lint → test.

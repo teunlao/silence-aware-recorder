@@ -5,13 +5,26 @@
   "description": "Audio control with silence detection.",
   "keywords": [],
   "license": "ISC",
+  "packageManager": "pnpm@10.19.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=10.0.0"
+  },
   "scripts": {
-    "lint": "biome check .",
-    "lint:fix": "biome check --write .",
-    "format": "biome format --write ."
+    "build": "turbo build",
+    "dev": "turbo dev --no-cache --continue",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "clean": "turbo clean",
+    "changeset": "changeset",
+    "version": "changeset version && pnpm install --no-frozen-lockfile",
+    "release": "turbo clean && turbo build && changeset publish"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",
+    "@changesets/cli": "^2.29.7",
+    "turbo": "^2.5.8",
     "typescript": "^5.9.3"
   },
   "tsup": {

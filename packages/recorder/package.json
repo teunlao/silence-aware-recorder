@@ -20,11 +20,14 @@
     }
   },
   "scripts": {
-    "dev": "tsup --watch",
     "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "clean": "rm -rf dist *.tsbuildinfo"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0"

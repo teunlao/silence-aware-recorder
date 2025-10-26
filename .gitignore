@@ -1,6 +1,8 @@
 .idea
 .vscode
 .lab
+.external
+.turbo
 
 node_modules
 dist
