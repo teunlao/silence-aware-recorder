@@ -183,6 +183,9 @@ importers:
       '@saraudio/core':
         specifier: workspace:*
         version: link:../core
+      '@saraudio/utils':
+        specifier: workspace:*
+        version: link:../utils
     devDependencies:
       '@saraudio/vad-energy':
         specifier: workspace:*

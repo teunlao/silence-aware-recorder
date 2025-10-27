@@ -1,19 +1,14 @@
 import type { Frame, Pipeline, Stage } from '@saraudio/core';
+import type { Logger } from '@saraudio/utils';
 
 export type RuntimeMode = 'worklet' | 'media-recorder' | 'auto';
 
 export type FallbackReason = 'worklet-unsupported' | 'media-recorder-unsupported' | 'display-audio-unsupported';
 
-export interface RuntimeLogger {
-  info: (...messages: ReadonlyArray<unknown>) => void;
-  warn: (...messages: ReadonlyArray<unknown>) => void;
-  error: (...messages: ReadonlyArray<unknown>) => void;
-}
-
 export interface RuntimeServices {
   clock: () => number;
   createId: () => string;
-  logger: RuntimeLogger;
+  logger: Logger;
 }
 
 export interface RuntimeServiceOverrides extends Partial<RuntimeServices> {}

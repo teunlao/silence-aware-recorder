@@ -98,7 +98,7 @@ export const createBrowserRuntime = (options?: BrowserRuntimeOptions): BrowserRu
 
   const createMicrophoneSource = (sourceOptions?: MicrophoneSourceOptions): BrowserFrameSource => {
     const mode = resolveMode(sourceOptions?.mode ?? options?.mode ?? 'auto', (reason) => {
-      services.logger.warn('Runtime fallback', reason);
+      services.logger.warn('Runtime fallback', { reason });
       options?.onFallback?.(reason);
     });
 
@@ -111,7 +111,7 @@ export const createBrowserRuntime = (options?: BrowserRuntimeOptions): BrowserRu
           logger: services.logger,
         });
       } catch (error) {
-        services.logger.warn('AudioWorklet microphone source not available, falling back to MediaRecorder', error);
+        services.logger.warn('AudioWorklet microphone source not available, falling back to MediaRecorder', { error });
         options?.onFallback?.('worklet-unsupported');
         return createMediaRecorderSource({
           constraints: sourceOptions?.constraints,

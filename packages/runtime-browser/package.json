@@ -32,7 +32,8 @@
     }
   },
   "dependencies": {
-    "@saraudio/core": "workspace:*"
+    "@saraudio/core": "workspace:*",
+    "@saraudio/utils": "workspace:*"
   },
   "peerDependencies": {
     "@saraudio/vad-energy": "workspace:*"

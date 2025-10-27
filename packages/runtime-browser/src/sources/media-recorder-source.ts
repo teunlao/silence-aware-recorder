@@ -1,10 +1,11 @@
-import type { BrowserFrameSource, RuntimeLogger } from '../types';
+import type { Logger } from '@saraudio/utils';
+import type { BrowserFrameSource } from '../types';
 import { float32ToInt16 } from '../utils/audio';
 
 export interface MediaRecorderSourceConfig {
   constraints?: MediaStreamConstraints['audio'] | MediaTrackConstraints;
   frameSize?: number;
-  logger: RuntimeLogger;
+  logger: Logger;
   onStream?: (stream: MediaStream | null) => void;
 }
 
@@ -34,7 +35,7 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
       try {
         await audioContext.close();
       } catch (error) {
-        config.logger.warn('AudioContext close error', error);
+        config.logger.warn('AudioContext close error', { error });
       }
     }
     audioContext = null;
@@ -57,13 +58,14 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
       video: false,
     };
 
-    config.logger.info('[browser-source] requesting media stream', constraints);
+    config.logger.info('requesting media stream', { constraints });
 
     mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-    config.logger.info('[browser-source] media stream acquired', {
-      trackSettings: mediaStream.getAudioTracks()[0]?.getSettings() ?? null,
-      trackLabel: mediaStream.getAudioTracks()[0]?.label ?? 'unknown',
-    });
+    const track = mediaStream.getAudioTracks()[0];
+    config.logger.info('media stream acquired', () => ({
+      trackSettings: track?.getSettings() ?? null,
+      trackLabel: track?.label ?? 'unknown',
+    }));
 
     config.onStream?.(mediaStream);
     audioContext = new AudioContext();
@@ -73,7 +75,7 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
       try {
         await audioContext.resume();
       } catch (resumeError) {
-        config.logger.warn('[browser-source] AudioContext resume failed', resumeError);
+        config.logger.warn('AudioContext resume failed', { error: resumeError });
       }
     }
 
@@ -83,7 +85,7 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
     sinkNode = audioContext.createGain();
     sinkNode.gain.value = 0;
 
-    config.logger.info('[browser-source] processor started', {
+    config.logger.info('processor started', {
       sampleRate: audioContext.sampleRate,
       channels,
       frameSize,
@@ -118,21 +120,21 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
       const playbackTime = event.playbackTime;
       if (basePlaybackTime === null) {
         basePlaybackTime = playbackTime;
-        config.logger.info('[browser-source] first frame baseline set', { playbackTime });
+        config.logger.debug('first frame baseline set', { playbackTime });
       }
       const relativeSeconds = playbackTime - (basePlaybackTime ?? playbackTime);
       const tsMs = startTimestamp + relativeSeconds * 1000;
 
       frameCount += 1;
       if (frameCount <= 10 || frameCount % 50 === 0) {
-        config.logger.info('[browser-source] frame captured', {
+        config.logger.debug('frame captured', () => ({
           frameCount,
           frameLength,
           channelCount,
           sampleRate: context.sampleRate,
           tsMs,
           firstSample: pcm[0] ?? 0,
-        });
+        }));
       }
 
       onFrame({
@@ -154,7 +156,7 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
     }
     isActive = false;
 
-    config.logger.info('[browser-source] stopping processor');
+    config.logger.info('stopping processor');
 
     if (processorNode) {
       processorNode.onaudioprocess = null;
@@ -174,7 +176,7 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
     basePlaybackTime = null;
     frameCount = 0;
 
-    config.logger.info('[browser-source] processor stopped');
+    config.logger.info('processor stopped');
   };
 
   return {

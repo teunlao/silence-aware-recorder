@@ -1,9 +1,10 @@
-import type { BrowserFrameSource, RuntimeLogger } from '../types';
+import type { Logger } from '@saraudio/utils';
+import type { BrowserFrameSource } from '../types';
 
 export interface WorkletSourceConfig {
   constraints?: MediaStreamConstraints['audio'] | MediaTrackConstraints;
   ringBufferFrames: number;
-  logger: RuntimeLogger;
+  logger: Logger;
   onStream?: (stream: MediaStream | null) => void;
 }
 
