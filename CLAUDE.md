@@ -1,4 +1,8 @@
-# For Claude
+**Git commits:** NO promotional links, NO "Generated with Claude Code", NO "Co-Authored-By: Claude".
+**Git commits:** NO promotional links, NO "Generated with Claude Code", NO "Co-Authored-By: Claude".
+**Git commits:** NO promotional links, NO "Generated with Claude Code", NO "Co-Authored-By: Claude".
+**Git commits:** NO promotional links, NO "Generated with Claude Code", NO "Co-Authored-By: Claude".
+**Git commits:** NO promotional links, NO "Generated with Claude Code", NO "Co-Authored-By: Claude".
 
 **Project:** SARAUDIO - Multi-source audio stack for AI-native apps.
 
@@ -13,6 +17,32 @@
 **Tests:** Unit tests `.test.ts` next to the file. Integration tests and fixtures in `__tests__/`.
 
 **Git commits:** NO promotional links, NO "Generated with Claude Code", NO "Co-Authored-By: Claude".
+**Git commits:** NO promotional links, NO "Generated with Claude Code", NO "Co-Authored-By: Claude".
+**Git commits:** NO promotional links, NO "Generated with Claude Code", NO "Co-Authored-By: Claude".
+**Git commits:** NO promotional links, NO "Generated with Claude Code", NO "Co-Authored-By: Claude".
+**Git commits:** NO promotional links, NO "Generated with Claude Code", NO "Co-Authored-By: Claude".
+
+---
+
+## Task Execution Rules
+
+**CRITICAL: Read ALL Related Files FIRST**
+
+Before starting ANY task:
+1. Read ALL files related to the problem - 10, 20, 30 files if needed
+2. Read files that can influence the "correct implementation"
+3. NEVER guess or assume what you don't know
+4. NEVER work based on assumptions - only on actual file content
+
+Example: If implementing a feature in `runtime.ts`:
+- Read `runtime.ts` (main file)
+- Read type definitions it imports
+- Read related files in same directory
+- Read test files to understand expected behavior
+- Read documentation/ADRs about the feature
+- Read example usage if exists
+
+**Better to read 30 files than make wrong assumptions.**
 
 ---
 

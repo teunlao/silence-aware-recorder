@@ -10,6 +10,8 @@
 
 **Tests:** Unit tests `.test.ts` next to the file. Integration tests and fixtures in `__tests__/`.
 
+**CRITICAL: File Reading Rule** - ALWAYS re-read a file with Read tool BEFORE editing it. Files can change (by user, linter, or other agents). Never edit based on old content.
+
 ---
 
 ## Commands
