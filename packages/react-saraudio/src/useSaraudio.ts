@@ -102,15 +102,21 @@ export function useSaraudio(options: UseSaraudioOptions = {}): UseSaraudioResult
       // Create stage only if not already tried
       if (!vadTriedRef.current) {
         vadTriedRef.current = true;
-        try {
-          const { createEnergyVadStage } = require('@saraudio/vad-energy');
-          const vadConfig = vadOptions === true ? {} : vadOptions;
-          setVadStage(createEnergyVadStage(vadConfig));
-        } catch {
-          // Set error only once, plugin unavailable
-          setLoadError((prev) => prev ?? new Error('VAD plugin not found. Install it: pnpm add @saraudio/vad-energy'));
-          setVadStage(null);
-        }
+
+        // Dynamic import for code splitting
+        import('@saraudio/vad-energy')
+          .then((module) => {
+            const { createEnergyVadStage } = module;
+            const vadConfig = vadOptions === true ? {} : vadOptions;
+            setVadStage(createEnergyVadStage(vadConfig));
+          })
+          .catch(() => {
+            // Set error only once, plugin unavailable
+            setLoadError(
+              (prev) => prev ?? new Error('VAD plugin not found. Install it: pnpm add @saraudio/vad-energy'),
+            );
+            setVadStage(null);
+          });
       }
     } else {
       // VAD disabled - clear stage and reset tried flag
@@ -128,14 +134,18 @@ export function useSaraudio(options: UseSaraudioOptions = {}): UseSaraudioResult
       // Create stage only if not already tried
       if (!meterTriedRef.current) {
         meterTriedRef.current = true;
-        try {
-          const { createAudioMeterStage } = require('@saraudio/meter');
-          setMeterStage(createAudioMeterStage());
-        } catch {
-          // Set error only once, plugin unavailable
-          setLoadError((prev) => prev ?? new Error('Meter plugin not found. Install it: pnpm add @saraudio/meter'));
-          setMeterStage(null);
-        }
+
+        // Dynamic import for code splitting
+        import('@saraudio/meter')
+          .then((module) => {
+            const { createAudioMeterStage } = module;
+            setMeterStage(createAudioMeterStage());
+          })
+          .catch(() => {
+            // Set error only once, plugin unavailable
+            setLoadError((prev) => prev ?? new Error('Meter plugin not found. Install it: pnpm add @saraudio/meter'));
+            setMeterStage(null);
+          });
       }
     } else {
       // Meter disabled - clear stage and reset tried flag
