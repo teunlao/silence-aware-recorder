@@ -1,12 +1,5 @@
 import type { Segment } from '@saraudio/core';
-import {
-  createAudioMeterStage,
-  useMeter,
-  useSaraudioFallbackReason,
-  useSaraudioMicrophone,
-  useSaraudioPipeline,
-} from '@saraudio/react';
-import { createEnergyVadStage } from '@saraudio/vad-energy';
+import { useSaraudio } from '@saraudio/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const formatDuration = (ms: number): string => `${(ms / 1000).toFixed(2)} s`;
@@ -97,16 +90,6 @@ export const App = () => {
     }
   }, []);
 
-  const vadStage = useMemo(() => createEnergyVadStage({ thresholdDb, smoothMs }), [thresholdDb, smoothMs]);
-  const meterStage = useMemo(() => createAudioMeterStage(), []);
-
-  const { pipeline, isSpeech, lastVad, segments, clearSegments } = useSaraudioPipeline({
-    stages: [vadStage, meterStage],
-    retainSegments: 10,
-  });
-
-  const { rms, db } = useMeter({ pipeline });
-
   const audioConstraints = useMemo<MediaTrackConstraints>(() => {
     const constraints: MediaTrackConstraints = {
       channelCount: 1,
@@ -118,21 +101,32 @@ export const App = () => {
     return constraints;
   }, [selectedDeviceId]);
 
-  const { status, error, start, stop } = useSaraudioMicrophone({
-    pipeline,
+  const {
+    status,
+    error,
+    start,
+    stop,
+    vad: vadState,
+    levels,
+    segments,
+    clearSegments,
+    fallbackReason,
+  } = useSaraudio({
+    vad: { thresholdDb, smoothMs },
+    meter: true,
     constraints: audioConstraints,
   });
 
-  const fallbackReason = useSaraudioFallbackReason();
+  const lastVad = vadState ? { speech: vadState.isSpeech, score: vadState.score } : null;
+  const isSpeech = vadState?.isSpeech ?? false;
+  const rms = levels?.rms ?? 0;
+  const db = levels?.db ?? -Infinity;
 
   useEffect(() => {
-    const unsubscribeVad = pipeline.events.on('vad', () => {
+    if (lastVad) {
       setHasVadEvent(true);
-    });
-    return () => {
-      unsubscribeVad();
-    };
-  }, [pipeline]);
+    }
+  }, [lastVad]);
 
   const isRunning = status === 'running' || status === 'acquiring';
   const meterPercent = Math.min(100, Math.round(rms * 100));

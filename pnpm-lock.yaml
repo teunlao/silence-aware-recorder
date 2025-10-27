@@ -168,6 +168,9 @@ importers:
       '@saraudio/utils':
         specifier: workspace:*
         version: link:../utils
+      '@saraudio/vad-energy':
+        specifier: workspace:*
+        version: link:../vad-energy
     devDependencies:
       '@testing-library/react':
         specifier: ^16.3.0
