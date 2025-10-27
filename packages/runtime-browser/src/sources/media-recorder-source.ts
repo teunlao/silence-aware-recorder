@@ -1,6 +1,7 @@
 import type { Logger } from '@saraudio/utils';
 import type { BrowserFrameSource } from '../types';
 import { float32ToInt16 } from '../utils/audio';
+import { downmixToMono } from '../utils/downmix';
 
 export interface MediaRecorderSourceConfig {
   constraints?: MediaStreamConstraints['audio'] | MediaTrackConstraints;
@@ -62,10 +63,32 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
 
     mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
     const track = mediaStream.getAudioTracks()[0];
+    const settings = track?.getSettings();
+
     config.logger.info('media stream acquired', () => ({
-      trackSettings: track?.getSettings() ?? null,
+      trackSettings: settings ?? null,
       trackLabel: track?.label ?? 'unknown',
     }));
+
+    // Check for constraints mismatch
+    const requestedConstraints = typeof config.constraints === 'object' ? config.constraints : {};
+    if (settings && typeof settings.channelCount === 'number' && settings.channelCount !== 1) {
+      config.logger.warn('Stereo input detected — downmixing to mono', {
+        requested: (requestedConstraints as MediaTrackConstraints).channelCount ?? 'unspecified',
+        actual: settings.channelCount,
+      });
+    }
+    if (
+      settings &&
+      typeof settings.sampleRate === 'number' &&
+      typeof (requestedConstraints as MediaTrackConstraints).sampleRate === 'number' &&
+      settings.sampleRate !== (requestedConstraints as MediaTrackConstraints).sampleRate
+    ) {
+      config.logger.warn('Sample rate mismatch', {
+        requested: (requestedConstraints as MediaTrackConstraints).sampleRate,
+        actual: settings.sampleRate,
+      });
+    }
 
     config.onStream?.(mediaStream);
     audioContext = new AudioContext();
@@ -103,20 +126,15 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
       if (!context) {
         return;
       }
-      const interleaved = new Float32Array(frameLength * channelCount);
-      const channelData: Float32Array[] = [];
 
-      for (let channel = 0; channel < channelCount; channel += 1) {
-        channelData.push(input.getChannelData(channel));
+      // Collect channel views and downmix to mono
+      const views: Float32Array[] = [];
+      for (let ch = 0; ch < channelCount; ch += 1) {
+        views.push(input.getChannelData(ch));
       }
+      const mono = downmixToMono(views);
 
-      for (let sample = 0; sample < frameLength; sample += 1) {
-        for (let channel = 0; channel < channelCount; channel += 1) {
-          interleaved[sample * channelCount + channel] = channelData[channel]?.[sample] ?? 0;
-        }
-      }
-
-      const pcm = float32ToInt16(interleaved);
+      const pcm = float32ToInt16(mono);
       const playbackTime = event.playbackTime;
       if (basePlaybackTime === null) {
         basePlaybackTime = playbackTime;
@@ -130,7 +148,8 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
         config.logger.debug('frame captured', () => ({
           frameCount,
           frameLength,
-          channelCount,
+          inputChannels: channelCount,
+          deliveredChannels: 1,
           sampleRate: context.sampleRate,
           tsMs,
           firstSample: pcm[0] ?? 0,
@@ -141,7 +160,7 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
         pcm,
         tsMs,
         sampleRate: context.sampleRate,
-        channels: (channelCount === 1 ? 1 : 2) as 1 | 2,
+        channels: 1,
       });
     };
 
