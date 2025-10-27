@@ -159,6 +159,9 @@ importers:
       '@saraudio/core':
         specifier: workspace:*
         version: link:../core
+      '@saraudio/meter':
+        specifier: workspace:*
+        version: link:../meter
       '@saraudio/runtime-browser':
         specifier: workspace:*
         version: link:../runtime-browser
