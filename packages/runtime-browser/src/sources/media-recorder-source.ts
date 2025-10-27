@@ -20,6 +20,7 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
   let startTimestamp = 0;
   let basePlaybackTime: number | null = null;
   let frameCount = 0;
+  let lifecycleToken = 0; // invalidates callbacks across start/stop cycles
 
   const stopStream = () => {
     if (mediaStream) {
@@ -44,13 +45,14 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
 
   const start: BrowserFrameSource['start'] = async (onFrame) => {
     if (isActive) {
-      throw new Error('MediaRecorder source already started');
+      // Idempotent: already started → noop
+      return;
     }
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       throw new Error('mediaDevices.getUserMedia is not available in this environment');
     }
 
-    isActive = true;
+    const token = lifecycleToken + 1; // tentative token for this start
     startTimestamp = performance.now();
     basePlaybackTime = null;
 
@@ -61,7 +63,15 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
 
     config.logger.info('requesting media stream', { constraints });
 
-    mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+    } catch (error) {
+      // Ensure clean state on failure
+      isActive = false;
+      basePlaybackTime = null;
+      frameCount = 0;
+      throw error instanceof Error ? error : new Error(String(error));
+    }
     const track = mediaStream.getAudioTracks()[0];
     const settings = track?.getSettings();
 
@@ -114,7 +124,13 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
       frameSize,
     });
 
+    // Commit start: mark as active and publish token
+    lifecycleToken = token;
+    isActive = true;
+
     processorNode.onaudioprocess = (event) => {
+      // Ignore late callbacks from previous lifecycle
+      if (token !== lifecycleToken || !isActive) return;
       if (!isActive) {
         return;
       }
@@ -171,9 +187,11 @@ export const createMediaRecorderSource = (config: MediaRecorderSourceConfig): Br
 
   const stop: BrowserFrameSource['stop'] = async () => {
     if (!isActive) {
+      // Idempotent: already stopped → noop
       return;
     }
     isActive = false;
+    lifecycleToken += 1; // invalidate any pending callbacks
 
     config.logger.info('stopping processor');
 

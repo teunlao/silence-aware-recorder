@@ -5,8 +5,8 @@ import readline from 'node:readline';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import type { Segment } from '@saraudio/core';
-import { createEnergyVadStage } from '@saraudio/vad-energy';
 import { createNodeRuntime } from '@saraudio/runtime-node';
+import { createEnergyVadStage } from '@saraudio/vad-energy';
 
 const SAMPLE_RATE = 16000;
 const CHANNELS = 1;
@@ -183,7 +183,9 @@ const main = async () => {
   pipeline.events.on('segment', (segment) => {
     segmentIndex += 1;
     const { startMs, endMs, durationMs } = segment;
-    console.log(`segment #${segmentIndex} ${startMs.toFixed(0)} → ${endMs.toFixed(0)} (duration ${durationMs.toFixed(0)} ms)`);
+    console.log(
+      `segment #${segmentIndex} ${startMs.toFixed(0)} → ${endMs.toFixed(0)} (duration ${durationMs.toFixed(0)} ms)`,
+    );
     writeSegmentToFile(segment, segmentIndex);
   });
 
@@ -194,7 +196,9 @@ const main = async () => {
     const active = speech ? '#' : '.';
     const bar = active.repeat(Math.round(score * 20)).padEnd(20, '.');
     readline.cursorTo(process.stdout, 0);
-    process.stdout.write(`[${bar}] ${speech ? 'speech ' : 'silence'} score=${score.toFixed(2)} ts=${tsMs.toFixed(0)}   `);
+    process.stdout.write(
+      `[${bar}] ${speech ? 'speech ' : 'silence'} score=${score.toFixed(2)} ts=${tsMs.toFixed(0)}   `,
+    );
   });
 
   const source = runtime.createPcm16StreamSource({

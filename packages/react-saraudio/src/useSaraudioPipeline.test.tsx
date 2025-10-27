@@ -6,6 +6,7 @@ import type {
   MicrophoneSourceOptions,
   SegmenterFactoryOptions,
 } from '@saraudio/runtime-browser';
+import { noopLogger } from '@saraudio/utils';
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
@@ -71,11 +72,7 @@ class MockBrowserRuntime implements BrowserRuntime {
   public services = {
     clock: () => 0,
     createId: () => Math.random().toString(16).slice(2),
-    logger: {
-      info: () => undefined,
-      warn: () => undefined,
-      error: () => undefined,
-    },
+    logger: noopLogger,
   };
 
   public lastSource: MockSource | null = null;

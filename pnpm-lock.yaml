@@ -140,6 +140,9 @@ importers:
       '@saraudio/runtime-browser':
         specifier: workspace:*
         version: link:../runtime-browser
+      '@saraudio/utils':
+        specifier: workspace:*
+        version: link:../utils
     devDependencies:
       '@testing-library/react':
         specifier: ^16.3.0

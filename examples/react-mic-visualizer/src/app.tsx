@@ -62,7 +62,6 @@ export const App = () => {
     raf: null,
   });
 
-
   const enumerateAudioInputs = async () => {
     if (!navigator.mediaDevices?.enumerateDevices) {
       setEnumerationError('Browser does not support device enumeration.');
@@ -150,7 +149,9 @@ export const App = () => {
       } catch {
         // Failed to setup meter, ignore
       }
-    }, [teardownMeter]);
+    },
+    [teardownMeter],
+  );
 
   useEffect(() => {
     void enumerateAudioInputs();
@@ -227,7 +228,6 @@ export const App = () => {
     }
     previousStatusRef.current = status;
   }, [status, teardownMeter]);
-
 
   const handleStartStop = useCallback(() => {
     if (isRunning) {
