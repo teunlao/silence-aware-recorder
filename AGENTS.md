@@ -6,4 +6,6 @@
 
 **Coding:** `.lab/designs/coding-standards-2025-10-26.md` - NO `any`, minimize `as`.
 
-**Workflow:** `.lab/designs/development-workflow-2025-10-26.md` - после КАЖДОГО изменения: typecheck → lint → test.
+**Workflow:** `.lab/designs/development-workflow-2025-10-26.md` - after EVERY change: typecheck → lint → test.
+
+**Tests:** Unit tests `.test.ts` next to the file. Integration tests and fixtures in `__tests__/`.
