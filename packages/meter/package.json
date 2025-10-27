@@ -1,0 +1,66 @@
+{
+  "name": "@saraudio/meter",
+  "version": "0.0.0",
+  "description": "Real-time audio level metering for SARAudio",
+  "license": "ISC",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "pnpm clean && tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@saraudio/core": "workspace:*",
+    "@saraudio/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/teunlao/silence-aware-recorder.git",
+    "directory": "packages/meter"
+  },
+  "homepage": "https://github.com/teunlao/silence-aware-recorder#readme",
+  "bugs": {
+    "url": "https://github.com/teunlao/silence-aware-recorder/issues"
+  },
+  "keywords": [
+    "audio",
+    "meter",
+    "level",
+    "rms",
+    "peak",
+    "decibels",
+    "real-time"
+  ]
+}

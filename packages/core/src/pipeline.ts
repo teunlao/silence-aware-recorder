@@ -1,11 +1,12 @@
 import { EventBus } from './event-bus';
-import type { CoreError, Frame, Segment, VADScore } from './types';
+import type { CoreError, Frame, MeterPayload, Segment, VADScore } from './types';
 
 export interface PipelineEvents extends Record<string, unknown> {
   vad: VADScore;
   speechStart: { tsMs: number };
   speechEnd: { tsMs: number };
   segment: Segment;
+  meter: MeterPayload;
   error: CoreError;
 }
 
