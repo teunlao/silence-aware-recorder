@@ -70,4 +70,61 @@ describe('energy VAD stage', () => {
     expect(scores[2]).toBe(1);
     expect(timeline[2]?.speech).toBe(true);
   });
+
+  it('updates threshold without recreating stage', () => {
+    const pipeline = new Pipeline({
+      now: () => 0,
+      createId: () => 'test-id',
+    });
+
+    const vadStage = createEnergyVadStage({ thresholdDb: -40, smoothMs: 10 });
+    pipeline.use(vadStage);
+
+    const events: VADScore[] = [];
+    pipeline.events.on('vad', (score) => events.push(score));
+
+    // Frame with moderate energy
+    const frame: Frame = {
+      pcm: new Float32Array(1024).fill(0.05), // ~-26dB
+      tsMs: 0,
+      sampleRate: 16000,
+      channels: 1,
+    };
+
+    pipeline.push(frame);
+    expect(events[0]?.speech).toBe(true); // Above -40dB threshold
+
+    events.length = 0;
+
+    // Update threshold to -20dB (higher)
+    vadStage.updateConfig({ thresholdDb: -20 });
+
+    pipeline.push({ ...frame, tsMs: 50 });
+    expect(events[0]?.speech).toBe(false); // Below -20dB threshold
+  });
+
+  it('updates multiple config parameters at once', () => {
+    const pipeline = new Pipeline({
+      now: () => 0,
+      createId: () => 'test-id',
+    });
+
+    const vadStage = createEnergyVadStage({ thresholdDb: -40, smoothMs: 100 });
+    pipeline.use(vadStage);
+
+    const events: VADScore[] = [];
+    pipeline.events.on('vad', (score) => events.push(score));
+
+    vadStage.updateConfig({ thresholdDb: -30, smoothMs: 10 });
+
+    const frame: Frame = {
+      pcm: new Float32Array(1024).fill(0.03), // ~-30dB
+      tsMs: 0,
+      sampleRate: 16000,
+      channels: 1,
+    };
+
+    pipeline.push(frame);
+    expect(events.length).toBeGreaterThan(0);
+  });
 });

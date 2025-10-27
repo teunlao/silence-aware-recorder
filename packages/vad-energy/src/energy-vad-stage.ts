@@ -9,6 +9,10 @@ export interface EnergyVadOptions {
   minRms?: number;
 }
 
+export interface EnergyVadStage extends Stage {
+  updateConfig(options: Partial<EnergyVadOptions>): void;
+}
+
 interface VadState {
   hasValue: boolean;
   smoothedDb: number;
@@ -21,12 +25,12 @@ const createInitialState = (): VadState => ({
   lastTs: 0,
 });
 
-export function createEnergyVadStage(options: EnergyVadOptions = {}): Stage {
-  const thresholdDb = options.thresholdDb ?? -50;
-  const floorDb = options.floorDb ?? -100;
-  const ceilingDb = options.ceilingDb ?? 0;
-  const smoothMs = Math.max(1, options.smoothMs ?? 50);
-  const minRms = options.minRms ?? 1e-4;
+export function createEnergyVadStage(options: EnergyVadOptions = {}): EnergyVadStage {
+  let thresholdDb = options.thresholdDb ?? -50;
+  let floorDb = options.floorDb ?? -100;
+  let ceilingDb = options.ceilingDb ?? 0;
+  let smoothMs = Math.max(1, options.smoothMs ?? 50);
+  let minRms = options.minRms ?? 1e-4;
 
   let context: StageContext | null = null;
   let state: VadState = createInitialState();
@@ -70,6 +74,13 @@ export function createEnergyVadStage(options: EnergyVadOptions = {}): Stage {
     teardown() {
       state = createInitialState();
       context = null;
+    },
+    updateConfig(newOptions) {
+      thresholdDb = newOptions.thresholdDb ?? thresholdDb;
+      floorDb = newOptions.floorDb ?? floorDb;
+      ceilingDb = newOptions.ceilingDb ?? ceilingDb;
+      smoothMs = Math.max(1, newOptions.smoothMs ?? smoothMs);
+      minRms = newOptions.minRms ?? minRms;
     },
   };
 }
