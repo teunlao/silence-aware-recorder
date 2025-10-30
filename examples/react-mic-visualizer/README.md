@@ -1,29 +1,28 @@
 # React Microphone Visualizer (Vite 7 + React 19)
 
-Пример демонстрирует, как использовать `@saraudio/react` в браузере: приложение поднимает пайплайн с energy VAD, запускает микрофон и отображает активность речи в реальном времени.
+This example demonstrates how to use `@saraudio/react` in the browser: the application creates a pipeline with energy VAD, starts the microphone, and displays voice activity in real time.
 
-## Скрипты
+## Scripts
 
 ```bash
-pnpm install                           # один раз в корне монорепы
-pnpm --filter @saraudio/example-react-mic-visualizer dev      # запустить dev-сервер на http://localhost:5173
-pnpm --filter @saraudio/example-react-mic-visualizer build    # production-сборка
-pnpm --filter @saraudio/example-react-mic-visualizer preview  # предпросмотр сборки
+pnpm install                           # once in the monorepo root
+pnpm --filter @saraudio/example-react-mic-visualizer dev      # start dev server at http://localhost:5173
+pnpm --filter @saraudio/example-react-mic-visualizer build    # production build
+pnpm --filter @saraudio/example-react-mic-visualizer preview  # preview the build
 pnpm --filter @saraudio/example-react-mic-visualizer typecheck
 pnpm --filter @saraudio/example-react-mic-visualizer lint
 ```
 
-## Особенности
+## Features
 
 - React 19 + Vite 7.
-- `SaraudioProvider` создаёт браузерный runtime автоматически.
-- `useSaraudioPipeline` + `useSaraudioMicrophone` формируют поток PCM и сегменты (используя выбранный микрофон).
-- Живой VAD + отдельный индикатор уровня входа и лог последних событий ajudam отладке.
-- Встроенный выбор устройства и мгновенное обновление списка без перезапуска приложения; можно подстроить порог (dB) и сглаживание.
-- Хук сообщает о fallback'ах (например, переход на MediaRecorder).
+- `SaraudioProvider` creates the browser runtime automatically.
+- `useSaraudioPipeline` + `useSaraudioMicrophone` form the PCM stream and segments (using the selected microphone).
+- Live VAD + separate input level indicator and recent event log for debugging.
+- Built-in device selection with instant list updates without restarting the app; threshold (dB) and smoothing can be adjusted.
+- Hook reports fallbacks (e.g., switching to MediaRecorder).
 
-## Требования
+## Requirements
 
 - Node ≥ 18, pnpm ≥ 10.
-- Запускать на `localhost` по HTTPS/HTTP или на прод-домене с HTTPS, иначе браузер не выдаст доступ к микрофону.
-*** End Patch
+- Run on `localhost` via HTTPS/HTTP or on a production domain with HTTPS, otherwise the browser won't grant microphone access.
