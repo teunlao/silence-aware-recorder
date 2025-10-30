@@ -1,4 +1,4 @@
-# SARAUDIO v3 — Multi-Source Audio Stack
+# SARAUDIO (previously known as Silence Aware Recorder)
 
 > ⚠️ The repository is undergoing a full reboot for the v3 architecture. The legacy `silence-aware-recorder` package has been archived; all new work happens under the modular `@saraudio/*` namespace.
 
