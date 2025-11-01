@@ -1,7 +1,7 @@
 import type { CoreError, Frame, Pipeline, Segment, Stage, VADScore } from '@saraudio/core';
 import type { BrowserRuntime, SegmenterFactoryOptions } from '@saraudio/runtime-browser';
 import { buildStages } from '@saraudio/runtime-browser';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSaraudioRuntime } from './context';
 
 export interface UseSaraudioPipelineOptions {

@@ -188,14 +188,6 @@ export function useSaraudio(options: UseSaraudioOptions = {}): UseSaraudioResult
     return result;
   }, [vadStage, meterStage]);
 
-  // Readiness: avoid starting mic before plugin stages are ready
-  const vadReady = !vadEnabled || Boolean(vadStage);
-  const meterReady = !meterEnabled || Boolean(meterStage);
-  const ready = vadReady && meterReady;
-  useEffect(() => {
-    console.log('[ready] STATE', { vadReady, meterReady, ready });
-  }, [vadReady, meterReady, ready]);
-
   // Create pipeline
   const { pipeline, isSpeech, lastVad, segments, clearSegments } = useSaraudioPipeline({
     stages,
@@ -223,10 +215,6 @@ export function useSaraudio(options: UseSaraudioOptions = {}): UseSaraudioResult
   });
 
   // Wrap start to wait until stages are ready if needed
-  const start = micStart;
-
-  const stop = micStop;
-
   // Combine errors
   const error = loadError || micError;
 
@@ -239,8 +227,8 @@ export function useSaraudio(options: UseSaraudioOptions = {}): UseSaraudioResult
   return {
     status,
     error,
-    start,
-    stop,
+    start: micStart,
+    stop: micStop,
     vad,
     levels,
     segments,
