@@ -6,9 +6,6 @@ import { useMeter } from './useMeter';
 import { useSaraudioMicrophone } from './useSaraudioMicrophone';
 import { useSaraudioPipeline } from './useSaraudioPipeline';
 
-/**
- * Shallow-equal comparison for objects
- */
 function shallowEqual(a: VadOptions, b: VadOptions): boolean {
   const keysA = Object.keys(a) as (keyof VadOptions)[];
   const keysB = Object.keys(b) as (keyof VadOptions)[];
@@ -80,6 +77,7 @@ export function useSaraudio(options: UseSaraudioOptions = {}): UseSaraudioResult
 
   const contextRuntime = useSaraudioRuntime(runtimeOverride);
   const fallbackReason = useSaraudioFallbackReason();
+  const hookIdRef = useRef(`hs_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`);
   const [loadError, setLoadError] = useState<Error | null>(null);
   const [vadStage, setVadStage] = useState<ReturnType<
     typeof import('@saraudio/vad-energy').createEnergyVadStage
@@ -91,27 +89,33 @@ export function useSaraudio(options: UseSaraudioOptions = {}): UseSaraudioResult
   const vadEnabled = !!vadOptions;
   const vadTriedRef = useRef(false);
   const meterTriedRef = useRef(false);
+  const vadImportSeqRef = useRef(0);
+  const meterImportSeqRef = useRef(0);
 
   // Create/destroy VAD stage when enabled/disabled (NOT on config changes)
   // biome-ignore lint/correctness/useExhaustiveDependencies: vadOptions intentionally omitted, config updates via separate hot-update effect
   useEffect(() => {
-    // SSR guard
+    console.log('[vad] EFFECT', { hookId: hookIdRef.current, vadEnabled, tried: vadTriedRef.current });
     if (typeof window === 'undefined') return;
 
     if (vadEnabled) {
-      // Create stage only if not already tried
       if (!vadTriedRef.current) {
         vadTriedRef.current = true;
+        vadImportSeqRef.current += 1;
+        const seq = vadImportSeqRef.current;
+        console.log('[vad] CREATING', { hookId: hookIdRef.current, seq });
 
-        // Dynamic import for code splitting
         import('@saraudio/vad-energy')
           .then((module) => {
+            const late = seq !== vadImportSeqRef.current;
+            console.log('[vad] IMPORT_RESOLVED', { hookId: hookIdRef.current, seq, late });
             const { createEnergyVadStage } = module;
             const vadConfig = vadOptions === true ? {} : vadOptions;
+            console.log('[vad] CREATED', { hookId: hookIdRef.current, seq, late });
             setVadStage(createEnergyVadStage(vadConfig));
           })
           .catch(() => {
-            // Set error only once, plugin unavailable
+            console.log('[vad] IMPORT_FAILED', { hookId: hookIdRef.current, seq: vadImportSeqRef.current });
             setLoadError(
               (prev) => prev ?? new Error('VAD plugin not found. Install it: pnpm add @saraudio/vad-energy'),
             );
@@ -119,7 +123,6 @@ export function useSaraudio(options: UseSaraudioOptions = {}): UseSaraudioResult
           });
       }
     } else {
-      // VAD disabled - clear stage and reset tried flag
       setVadStage(null);
       vadTriedRef.current = false;
     }
@@ -127,28 +130,31 @@ export function useSaraudio(options: UseSaraudioOptions = {}): UseSaraudioResult
 
   // Create/destroy Meter stage when enabled/disabled
   useEffect(() => {
-    // SSR guard
+    console.log('[meter] EFFECT', { hookId: hookIdRef.current, meterEnabled, tried: meterTriedRef.current });
     if (typeof window === 'undefined') return;
 
     if (meterEnabled) {
-      // Create stage only if not already tried
       if (!meterTriedRef.current) {
         meterTriedRef.current = true;
+        meterImportSeqRef.current += 1;
+        const seq = meterImportSeqRef.current;
+        console.log('[meter] CREATING', { hookId: hookIdRef.current, seq });
 
-        // Dynamic import for code splitting
         import('@saraudio/meter')
           .then((module) => {
+            const late = seq !== meterImportSeqRef.current;
+            console.log('[meter] IMPORT_RESOLVED', { hookId: hookIdRef.current, seq, late });
             const { createAudioMeterStage } = module;
+            console.log('[meter] CREATED', { hookId: hookIdRef.current, seq, late });
             setMeterStage(createAudioMeterStage());
           })
           .catch(() => {
-            // Set error only once, plugin unavailable
+            console.log('[meter] IMPORT_FAILED', { hookId: hookIdRef.current, seq });
             setLoadError((prev) => prev ?? new Error('Meter plugin not found. Install it: pnpm add @saraudio/meter'));
             setMeterStage(null);
           });
       }
     } else {
-      // Meter disabled - clear stage and reset tried flag
       setMeterStage(null);
       meterTriedRef.current = false;
     }
@@ -174,13 +180,21 @@ export function useSaraudio(options: UseSaraudioOptions = {}): UseSaraudioResult
     }
   }, [vadStage, vadConfig]);
 
-  // Build stages array
   const stages = useMemo(() => {
     const result = [];
     if (vadStage) result.push(vadStage);
     if (meterStage) result.push(meterStage);
+    console.log('[stages] MEMO', { count: result.length, hasVad: !!vadStage, hasMeter: !!meterStage });
     return result;
   }, [vadStage, meterStage]);
+
+  // Readiness: avoid starting mic before plugin stages are ready
+  const vadReady = !vadEnabled || Boolean(vadStage);
+  const meterReady = !meterEnabled || Boolean(meterStage);
+  const ready = vadReady && meterReady;
+  useEffect(() => {
+    console.log('[ready] STATE', { vadReady, meterReady, ready });
+  }, [vadReady, meterReady, ready]);
 
   // Create pipeline
   const { pipeline, isSpeech, lastVad, segments, clearSegments } = useSaraudioPipeline({
@@ -197,15 +211,21 @@ export function useSaraudio(options: UseSaraudioOptions = {}): UseSaraudioResult
   const {
     status,
     error: micError,
-    start,
-    stop,
+    start: micStart,
+    stop: micStop,
   } = useSaraudioMicrophone({
     pipeline,
     runtime: contextRuntime,
     constraints,
     mode,
-    autoStart,
+    // Start is safe anytime; pipeline buffers until configured
+    autoStart: Boolean(autoStart),
   });
+
+  // Wrap start to wait until stages are ready if needed
+  const start = micStart;
+
+  const stop = micStop;
 
   // Combine errors
   const error = loadError || micError;

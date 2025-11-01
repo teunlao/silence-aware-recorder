@@ -1,5 +1,6 @@
 import type { CoreError, Frame, Pipeline, Segment, Stage, VADScore } from '@saraudio/core';
 import type { BrowserRuntime, SegmenterFactoryOptions } from '@saraudio/runtime-browser';
+import { buildStages } from '@saraudio/runtime-browser';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSaraudioRuntime } from './context';
 
@@ -17,6 +18,7 @@ export interface UseSaraudioPipelineResult {
   push(frame: Frame): void;
   flush(): void;
   dispose(): void;
+  handlersReady: boolean;
   isSpeech: boolean;
   lastVad: VADScore | null;
   segments: readonly Segment[];
@@ -25,21 +27,7 @@ export interface UseSaraudioPipelineResult {
 
 const shouldCollectSegments = (retainSegments?: number): boolean => Boolean(retainSegments && retainSegments > 0);
 
-const isStage = (value: SegmenterFactoryOptions | Stage): value is Stage =>
-  typeof (value as Stage).handle === 'function' && typeof (value as Stage).setup === 'function';
-
-const toSegmenterConfig = (value: UseSaraudioPipelineOptions['segmenter']): SegmenterFactoryOptions | Stage | false => {
-  if (value === false) {
-    return false;
-  }
-  if (!value) {
-    return {};
-  }
-  if (isStage(value)) {
-    return value;
-  }
-  return value;
-};
+const toSegmenterConfig = (value: UseSaraudioPipelineOptions['segmenter']) => (value === false ? false : (value ?? {}));
 
 export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSaraudioPipelineResult => {
   const { stages, segmenter, retainSegments, onSegment, onError, runtime: runtimeOverride } = options;
@@ -59,13 +47,10 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
   }, [stages]);
   const segmenterConfig = useMemo(() => toSegmenterConfig(segmenter), [segmenter]);
 
-  const pipeline = useMemo(() => {
-    const instance = runtime.createPipeline({
-      stages: stageList,
-      segmenter: segmenterConfig === false ? false : segmenterConfig,
-    });
-    return instance;
-  }, [runtime, stageList, segmenterConfig]);
+  const pipeline: Pipeline = useMemo(() => {
+    console.log('[pipeline] CREATE', { stageCount: 0 });
+    return runtime.createPipeline();
+  }, [runtime]);
 
   const lastPipelineRef = useRef<Pipeline | null>(null);
   const wasDisposedRef = useRef(false);
@@ -73,14 +58,11 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
   const [lastVad, setLastVad] = useState<VADScore | null>(null);
   const [segments, setSegments] = useState<Segment[]>([]);
   const collectSegments = shouldCollectSegments(retainSegments);
+  const [handlersReady, setHandlersReady] = useState(false);
 
   useEffect(() => {
     const samePipeline = lastPipelineRef.current === pipeline;
-
-    // React StrictMode: reinitialize stages after dispose on remount
-    if (samePipeline && wasDisposedRef.current) {
-      pipeline.reinitialize();
-    }
+    console.log('[pipeline] EFFECT', { samePipeline, wasDisposed: wasDisposedRef.current });
 
     lastPipelineRef.current = pipeline;
     wasDisposedRef.current = false;
@@ -88,8 +70,10 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
     setIsSpeech(false);
     setLastVad(null);
     setSegments([]);
+    setHandlersReady(false);
 
     return () => {
+      console.log('[pipeline] DISPOSE');
       pipeline.dispose();
       wasDisposedRef.current = true;
     };
@@ -126,7 +110,11 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
       onError?.(error);
     });
 
+    setHandlersReady(true);
+    console.log('[handlers] READY');
+
     return () => {
+      setHandlersReady(false);
       unsubscribeVad();
       unsubscribeSpeechStart();
       unsubscribeSpeechEnd();
@@ -155,11 +143,19 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
     setSegments([]);
   }, []);
 
+  // Configure stable pipeline whenever stages/segmenter change (delegate resolution to runtime-browser)
+  useEffect(() => {
+    const resolved = buildStages({ stages: stageList, segmenter: segmenterConfig });
+    pipeline.configure({ stages: resolved });
+    console.log('[pipeline] CONFIGURE', { stageCount: resolved.length });
+  }, [pipeline, stageList, segmenterConfig]);
+
   return {
     pipeline,
     push,
     flush,
     dispose,
+    handlersReady,
     isSpeech,
     lastVad,
     segments,

@@ -22,7 +22,7 @@ import type {
 const isStage = (value: SegmenterFactoryOptions | Stage): value is Stage =>
   typeof (value as Stage).setup === 'function' && typeof (value as Stage).handle === 'function';
 
-const toSegmenterStage = (value: SegmenterFactoryOptions | Stage | undefined): Stage => {
+export const toSegmenterStage = (value: SegmenterFactoryOptions | Stage | undefined): Stage => {
   if (!value) {
     return createSegmenterStage();
   }
@@ -34,6 +34,16 @@ const toSegmenterStage = (value: SegmenterFactoryOptions | Stage | undefined): S
     hangoverMs: value.hangoverMs,
   };
   return createSegmenterStage(options);
+};
+
+export const buildStages = (opts?: BrowserPipelineOptions): Stage[] => {
+  const base = opts?.stages ?? [];
+  const resolved: Stage[] = [...base];
+  if (opts?.segmenter !== false) {
+    const seg = toSegmenterStage(opts?.segmenter);
+    resolved.push(seg);
+  }
+  return resolved;
 };
 
 const resolveMode = (requested: RuntimeMode, notifyFallback: (reason: FallbackReason) => void): RuntimeMode => {
@@ -79,17 +89,7 @@ export const createBrowserRuntime = (options?: BrowserRuntimeOptions): BrowserRu
       createId: () => services.createId(),
     });
 
-    const stages = pipelineOptions?.stages ?? [];
-    stages.forEach((stage) => {
-      pipeline.use(stage);
-    });
-
-    if (pipelineOptions?.segmenter !== false) {
-      const segmenterStage = toSegmenterStage(
-        pipelineOptions?.segmenter as SegmenterFactoryOptions | Stage | undefined,
-      );
-      pipeline.use(segmenterStage);
-    }
+    if (pipelineOptions) pipeline.configure({ stages: buildStages(pipelineOptions) });
 
     return pipeline;
   };

@@ -33,7 +33,13 @@ export interface Stage {
 export class Pipeline {
   readonly events: EventBus<PipelineEvents>;
 
-  private readonly stages: Stage[] = [];
+  private stages: Stage[] = [];
+
+  private ready = false;
+
+  private buffer: Frame[] = [];
+
+  private maxBuffer = 64;
 
   private readonly now: () => number;
 
@@ -56,7 +62,30 @@ export class Pipeline {
     };
     stage.setup(context);
     this.stages.push(stage);
+    this.ready = this.stages.length > 0;
     return this;
+  }
+
+  clear(): void {
+    for (let i = 0; i < this.stages.length; i += 1) {
+      const stage = this.stages[i];
+      stage.teardown?.();
+    }
+    this.stages = [];
+    this.ready = false;
+  }
+
+  configure({ stages }: { stages: Stage[] }): void {
+    // Replace stages atomically
+    this.clear();
+    for (const stage of stages) this.use(stage);
+    this.reinitialize();
+    // Flush buffered frames if any
+    if (this.buffer.length > 0 && this.ready) {
+      const frames = this.buffer;
+      this.buffer = [];
+      for (const f of frames) this.push(f);
+    }
   }
 
   reinitialize(): void {
@@ -75,6 +104,10 @@ export class Pipeline {
   }
 
   push(frame: Frame): void {
+    if (!this.ready) {
+      if (this.buffer.length < this.maxBuffer) this.buffer.push(frame);
+      return;
+    }
     this.stages.forEach((stage) => {
       stage.handle(frame);
     });

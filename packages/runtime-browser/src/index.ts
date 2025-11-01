@@ -1,4 +1,4 @@
-export { createBrowserRuntime } from './runtime';
+export { createBrowserRuntime, buildStages } from './runtime';
 export type {
   BrowserFrameSource,
   BrowserPipelineOptions,

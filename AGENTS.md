@@ -53,3 +53,49 @@ pnpm --filter @saraudio/runtime-browser test
 - `@saraudio/utils` - Logger, DSP utils (rms, int16/float32)
 - `@saraudio/vad-energy` - Energy-based VAD stage
 - `@saraudio/runtime-browser` - Browser runtime (MediaRecorder, AudioWorklet)
+
+---
+
+## Type Safety (VERY IMPORTANT)
+
+Absolutely follow these rules when writing or editing TypeScript. These are hard constraints unless the owner explicitly approves an exception.
+
+- WARNING: Never use `as any`.
+- WARNING: Never chain casts like `as unknown as T`.
+- WARNING: Do not add redundant `as T` when the compiler can infer the type.
+- WARNING: Do not use non-null assertion `!` unless you add a one-line justification comment explaining why it is safe at that point.
+- Do not use `@ts-ignore` or `@ts-expect-error` without a tracking note (why it’s needed and when to remove). Prefer fixing types.
+- Prefer optional chaining and nullish coalescing: `obj?.prop`, `value ?? defaultValue` over brittle runtime checks.
+- When narrowing is truly needed, create a small, named type guard (e.g., `function isStage(x): x is Stage`) next to where it’s used. Keep it minimal and testable.
+- Public APIs should not accept `any` or `unknown` without a clear, typed boundary. Model the real types and let inference do the work.
+
+Checklist before you finish a change:
+- `rg -n " as any|as unknown"` returns no matches in touched files.
+- No new non-null `!` assertions without a justification comment.
+- No unnecessary `as` where inference already provides the type.
+
+## React Hook Discipline
+
+- Keep refs minimal. Do not introduce more than 1–2 `useRef` per hook without a clear reason. If you add one, leave a one-line reason in code.
+- Do not recreate long‑lived objects on every render. Keep a single pipeline instance and reconfigure it; do not replace it unless strictly necessary.
+- Async effects must clean up correctly. If an effect can resolve after unmount/remount, ensure cleanup prevents stale updates (AbortController or equivalent pattern).
+
+## Pipeline Integration Contract
+
+- A pipeline must be safe to receive frames before stages are fully configured. Use the core `Pipeline.configure({ stages })` to atomically apply stages; do not push partial stage sets piecemeal.
+- Never drop frames: if configuration is pending, the pipeline buffers and flushes after `configure`.
+
+---
+
+## Pre‑merge Self‑Check
+
+Run on the package you touched:
+
+```bash
+pnpm --filter @saraudio/PACKAGE typecheck
+pnpm --filter @saraudio/PACKAGE lint
+pnpm --filter @saraudio/PACKAGE test
+
+# Assert no forbidden casts in your diff
+rg -n " as any|as unknown" packages/<your-package>/src || true
+```
