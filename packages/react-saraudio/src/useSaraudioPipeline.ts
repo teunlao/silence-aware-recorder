@@ -18,7 +18,6 @@ export interface UseSaraudioPipelineResult {
   push(frame: Frame): void;
   flush(): void;
   dispose(): void;
-  handlersReady: boolean;
   isSpeech: boolean;
   lastVad: VADScore | null;
   segments: readonly Segment[];
@@ -33,18 +32,7 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
   const { stages, segmenter, retainSegments, onSegment, onError, runtime: runtimeOverride } = options;
   const runtime = useSaraudioRuntime(runtimeOverride);
 
-  const stageSnapshotRef = useRef<Stage[]>([]);
-
-  const stageList = useMemo(() => {
-    const previous = stageSnapshotRef.current;
-    const sameList = previous.length === stages.length && previous.every((stage, index) => stage === stages[index]);
-    if (sameList) {
-      return previous;
-    }
-    const next = [...stages];
-    stageSnapshotRef.current = next;
-    return next;
-  }, [stages]);
+  const stageList = stages;
   const segmenterConfig = useMemo(() => toSegmenterConfig(segmenter), [segmenter]);
 
   const pipeline: Pipeline = useMemo(() => {
@@ -52,30 +40,21 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
     return runtime.createPipeline();
   }, [runtime]);
 
-  const lastPipelineRef = useRef<Pipeline | null>(null);
-  const wasDisposedRef = useRef(false);
   const [isSpeech, setIsSpeech] = useState(false);
   const [lastVad, setLastVad] = useState<VADScore | null>(null);
   const [segments, setSegments] = useState<Segment[]>([]);
   const collectSegments = shouldCollectSegments(retainSegments);
-  const [handlersReady, setHandlersReady] = useState(false);
 
   useEffect(() => {
-    const samePipeline = lastPipelineRef.current === pipeline;
-    console.log('[pipeline] EFFECT', { samePipeline, wasDisposed: wasDisposedRef.current });
-
-    lastPipelineRef.current = pipeline;
-    wasDisposedRef.current = false;
+    console.log('[pipeline] EFFECT');
 
     setIsSpeech(false);
     setLastVad(null);
     setSegments([]);
-    setHandlersReady(false);
 
     return () => {
       console.log('[pipeline] DISPOSE');
       pipeline.dispose();
-      wasDisposedRef.current = true;
     };
   }, [pipeline]);
 
@@ -110,11 +89,7 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
       onError?.(error);
     });
 
-    setHandlersReady(true);
-    console.log('[handlers] READY');
-
     return () => {
-      setHandlersReady(false);
       unsubscribeVad();
       unsubscribeSpeechStart();
       unsubscribeSpeechEnd();
@@ -155,7 +130,6 @@ export const useSaraudioPipeline = (options: UseSaraudioPipelineOptions): UseSar
     push,
     flush,
     dispose,
-    handlersReady,
     isSpeech,
     lastVad,
     segments,

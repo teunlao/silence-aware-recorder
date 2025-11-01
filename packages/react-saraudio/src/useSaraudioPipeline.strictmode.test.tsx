@@ -27,6 +27,7 @@ describe('useSaraudioPipeline StrictMode', () => {
       flush: vi.fn(),
       dispose: vi.fn(),
       reinitialize: vi.fn(),
+      configure: vi.fn(),
     };
 
     const mockRuntime = {
@@ -88,6 +89,7 @@ describe('useSaraudioPipeline StrictMode', () => {
       flush: vi.fn(),
       dispose: vi.fn(),
       reinitialize: vi.fn(),
+      configure: vi.fn(),
     };
 
     const mockRuntime = {
