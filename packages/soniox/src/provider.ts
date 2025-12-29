@@ -1,13 +1,15 @@
 import { defineProvider } from '@saraudio/core';
 import type { Logger } from '@saraudio/utils';
 import { resolveConfig } from './config';
+import { SonioxOptionsSchema } from './schema';
 import { transcribeHTTP } from './transport-http';
 import { createWsStream } from './transport-ws';
 import type { SonioxOptions, SonioxProvider } from './types';
 
 export function soniox(options: SonioxOptions): SonioxProvider {
-  const logger: Logger | undefined = options.logger ? options.logger.child('provider-soniox') : undefined;
-  let resolved = resolveConfig(options);
+  const validated = SonioxOptionsSchema.parse(options);
+  const logger: Logger | undefined = validated.logger ? validated.logger.child('provider-soniox') : undefined;
+  let resolved = resolveConfig(validated);
   const listeners = new Set<(opts: SonioxOptions) => void>();
 
   return defineProvider({
@@ -38,8 +40,9 @@ export function soniox(options: SonioxOptions): SonioxProvider {
       return { encoding: 'pcm16', sampleRate, channels } as const;
     },
     async update(next) {
-      resolved = resolveConfig(next);
-      listeners.forEach((l) => l(next));
+      const validatedNext = SonioxOptionsSchema.parse(next);
+      resolved = resolveConfig(validatedNext);
+      listeners.forEach((l) => l(validatedNext));
     },
     onUpdate(listener) {
       listeners.add(listener);

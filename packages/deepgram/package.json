@@ -28,6 +28,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "import": "./dist/schema.mjs",
+      "require": "./dist/schema.js"
+    },
     "./server": {
       "types": "./dist/server/session-auth.d.ts",
       "import": "./dist/server/session-auth.mjs",
@@ -36,7 +41,8 @@
   },
   "dependencies": {
     "@saraudio/core": "workspace:*",
-    "@saraudio/utils": "workspace:*"
+    "@saraudio/utils": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

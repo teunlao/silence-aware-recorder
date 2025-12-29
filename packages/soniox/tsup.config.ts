@@ -3,6 +3,7 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: {
     index: 'src/index.ts',
+    schema: 'src/schema.ts',
     'server/session-auth': 'src/server/session-auth.ts',
   },
   format: ['cjs', 'esm'],

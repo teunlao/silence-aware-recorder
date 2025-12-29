@@ -4,18 +4,17 @@ import type { Logger } from '@saraudio/utils';
 import { buildTransportUrl, mergeHeaders, normalizeHeaders, parseRetryAfter, toArrayBuffer } from '@saraudio/utils';
 import { hasEmbeddedToken, resolveAuthToken } from './auth';
 import { type DeepgramResolvedConfig, resolveConfig } from './config';
-import type { DeepgramModelId } from './models';
 import type { DeepgramOptions } from './types';
 
 const DEFAULT_HTTP_BASE_URL = 'https://api.deepgram.com/v1/listen';
 
-export function resolveHttpConfig<M extends DeepgramModelId>(options: DeepgramOptions<M>): DeepgramResolvedConfig {
+export function resolveHttpConfig(options: DeepgramOptions): DeepgramResolvedConfig {
   const resolved = resolveConfig(options);
   return { ...resolved };
 }
 
 export async function transcribeHTTP(
-  options: DeepgramOptions<DeepgramModelId>,
+  options: DeepgramOptions,
   audio: AudioSource,
   batchOptions?: BatchOptions,
   signal?: AbortSignal,
@@ -76,7 +75,7 @@ export async function transcribeHTTP(
   return mapBatchResult(parsed);
 }
 
-function chooseAuthScheme(options: DeepgramOptions<DeepgramModelId>, token: string): string {
+function chooseAuthScheme(options: DeepgramOptions, token: string): string {
   const auth = options.auth;
   if (auth?.apiKey && !auth.token && !auth.getToken) return `Token ${token}`;
   if (auth?.token || auth?.getToken) return `Bearer ${token}`;

@@ -1,5 +1,5 @@
 import { clamp } from '@saraudio/utils';
-import { DEEPGRAM_MODEL_DEFINITIONS, type DeepgramModelId, isLanguageSupported } from './models';
+import { DEEPGRAM_MODEL_DEFINITIONS, isLanguageSupported } from './models';
 import type { DeepgramOptions } from './types';
 
 /** Default Deepgram realtime endpoint (listen v1). */
@@ -28,7 +28,7 @@ export const QUEUE_MIN_MS = 100;
 export const QUEUE_MAX_MS = 500;
 
 export interface DeepgramResolvedConfig {
-  raw: DeepgramOptions<DeepgramModelId>;
+  raw: DeepgramOptions;
   queueBudgetMs: number;
   keepaliveMs: number;
   sampleRate: number;
@@ -43,7 +43,7 @@ export interface DeepgramResolvedConfig {
  * Validate options, apply defaults and clamps, and prebuild base URLSearchParams.
  * Throws on unsupported model or invalid language for model.
  */
-export function resolveConfig<T extends DeepgramModelId>(options: DeepgramOptions<T>): DeepgramResolvedConfig {
+export function resolveConfig(options: DeepgramOptions): DeepgramResolvedConfig {
   if (!DEEPGRAM_MODEL_DEFINITIONS[options.model]) {
     throw new Error(`Unsupported Deepgram model: ${options.model}`);
   }
@@ -66,9 +66,7 @@ export function resolveConfig<T extends DeepgramModelId>(options: DeepgramOption
 }
 
 /** Build minimal required query params common for all sessions. */
-export function buildBaseParams<M extends DeepgramModelId>(
-  options: DeepgramOptions<M> & { sampleRate: number; channels: 1 | 2 },
-): URLSearchParams {
+export function buildBaseParams(options: DeepgramOptions & { sampleRate: number; channels: 1 | 2 }): URLSearchParams {
   const params = new URLSearchParams();
   params.set('model', options.model);
   params.set('encoding', options.encoding ?? 'linear16');

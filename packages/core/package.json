@@ -28,6 +28,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
+    "./json": {
+      "types": "./dist/json.d.ts",
+      "import": "./dist/json.mjs",
+      "require": "./dist/json.js"
+    },
     "./testing": {
       "types": "./dist/testing.d.ts",
       "import": "./dist/testing.mjs",
@@ -35,7 +40,8 @@
     }
   },
   "dependencies": {
-    "@saraudio/utils": "workspace:*"
+    "@saraudio/utils": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

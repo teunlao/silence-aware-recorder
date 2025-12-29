@@ -18,6 +18,7 @@ export default defineNuxtConfig({
     },
   },
   vite: {
+    // @ts-expect-error - @tailwindcss/vite plugin types mismatch Nuxt's Vite types; runtime is fine.
     plugins: [tailwindcss()],
     server: {
       headers: {

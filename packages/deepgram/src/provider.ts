@@ -2,15 +2,17 @@ import { defineProvider } from '@saraudio/core';
 import type { Logger } from '@saraudio/utils';
 import { normalizeChannels } from '@saraudio/utils';
 import { resolveConfig } from './config';
-import { type DeepgramModelId, SUPPORTED_FORMATS } from './models';
+import { SUPPORTED_FORMATS } from './models';
+import { DeepgramOptionsSchema } from './schema';
 import { transcribeHTTP } from './transport-http';
 import { createWsStream } from './transport-ws';
 import type { DeepgramOptions, DeepgramProvider } from './types';
 
-export function deepgram<M extends DeepgramModelId>(options: DeepgramOptions<M>): DeepgramProvider {
-  const logger: Logger | undefined = options.logger ? options.logger.child('provider-deepgram') : undefined;
-  let config = resolveConfig(options);
-  const listeners = new Set<(opts: DeepgramOptions<M>) => void>();
+export function deepgram(options: DeepgramOptions): DeepgramProvider {
+  const validated = DeepgramOptionsSchema.parse(options);
+  const logger: Logger | undefined = validated.logger ? validated.logger.child('provider-deepgram') : undefined;
+  let config = resolveConfig(validated);
+  const listeners = new Set<(opts: DeepgramOptions) => void>();
 
   return defineProvider({
     id: 'deepgram',
@@ -39,9 +41,10 @@ export function deepgram<M extends DeepgramModelId>(options: DeepgramOptions<M>)
       const channels = normalizeChannels(candidate.channels ?? config.channels);
       return { sampleRate, channels, encoding: 'pcm16' } as const;
     },
-    async update(next: DeepgramOptions<M>) {
-      config = resolveConfig(next);
-      listeners.forEach((l) => l(next));
+    async update(next) {
+      const validatedNext = DeepgramOptionsSchema.parse(next);
+      config = resolveConfig(validatedNext);
+      listeners.forEach((l) => l(validatedNext));
     },
     onUpdate(listener) {
       listeners.add(listener);
