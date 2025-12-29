@@ -154,6 +154,87 @@ describe('deepgram provider', () => {
     expect(stream.status).toBe('ready');
   });
 
+  test('connect forwards all configured options as query params', async () => {
+    const provider = deepgram({
+      auth: { apiKey: 'test-key' },
+      model: 'nova-2',
+      language: 'en-US',
+      detectLanguage: true,
+      interimResults: false,
+      endpointingMs: 350,
+      utteranceEndMs: 1200,
+      vadEvents: true,
+      punctuate: false,
+      profanityFilter: true,
+      smartFormat: false,
+      numerals: true,
+      measurements: true,
+      paragraphs: false,
+      utterances: true,
+      diarize: false,
+      multichannel: true,
+      keywords: ['hello', { term: 'world', boost: 2 }],
+      search: ['foo', 'bar'],
+      replace: [
+        { search: 'a', replace: 'b' },
+        { search: 'c', replace: '' },
+      ],
+    });
+    if (!provider.stream) throw new Error('expected websocket-capable provider');
+    const stream = provider.stream();
+    const promise = stream.connect();
+    const socket = await getSocket();
+
+    const url = new URL(socket.url);
+    const params = url.searchParams;
+    expect(params.get('detect_language')).toBe('true');
+    expect(params.get('interim_results')).toBe('false');
+    expect(params.get('endpointing')).toBe('350');
+    expect(params.get('utterance_end_ms')).toBe('1200');
+    expect(params.get('vad_events')).toBe('true');
+    expect(params.get('punctuate')).toBe('false');
+    expect(params.get('profanity_filter')).toBe('true');
+    expect(params.get('smart_format')).toBe('false');
+    expect(params.get('numerals')).toBe('true');
+    expect(params.get('measurements')).toBe('true');
+    expect(params.get('paragraphs')).toBe('false');
+    expect(params.get('utterances')).toBe('true');
+    expect(params.get('diarize')).toBe('false');
+    expect(params.get('multichannel')).toBe('true');
+    expect(params.get('channels')).toBe('2');
+    expect(params.getAll('keywords')).toEqual(['hello', 'world:2']);
+    expect(params.getAll('search')).toEqual(['foo', 'bar']);
+    expect(params.getAll('replace')).toEqual(['a:b', 'c:']);
+
+    socket.open();
+    await promise;
+    expect(stream.status).toBe('ready');
+  });
+
+  test('query overrides typed option params (including multi-valued ones)', async () => {
+    const provider = deepgram({
+      auth: { apiKey: 'test-key' },
+      model: 'nova-2',
+      language: 'en-US',
+      punctuate: false,
+      keywords: ['hello'],
+      query: { punctuate: true, keywords: 'override' },
+    });
+    if (!provider.stream) throw new Error('expected websocket-capable provider');
+    const stream = provider.stream();
+    const promise = stream.connect();
+    const socket = await getSocket();
+
+    const url = new URL(socket.url);
+    const params = url.searchParams;
+    expect(params.get('punctuate')).toBe('true');
+    expect(params.getAll('keywords')).toEqual(['override']);
+
+    socket.open();
+    await promise;
+    expect(stream.status).toBe('ready');
+  });
+
   test('queue drops oldest frame when over budget', async () => {
     const provider = createProvider();
     if (!provider.stream) throw new Error('expected websocket-capable provider');

@@ -18,6 +18,18 @@ export async function transcribeHTTP(
     typeof resolved.raw.headers === 'function'
       ? await resolved.raw.headers({ transport: 'http' })
       : resolved.raw.headers;
-  const _headers = provided ? mergeHeaders({}, normalizeHeaders(provided)) : undefined;
-  return await sonioxTranscribeFile(resolved, audio, { model: resolved.raw.model }, logger);
+  const headers = provided ? mergeHeaders({}, normalizeHeaders(provided)) : undefined;
+
+  return await sonioxTranscribeFile(
+    resolved,
+    audio,
+    {
+      model: resolved.raw.model,
+      language_hints: resolved.raw.languageHints,
+      enable_speaker_diarization: resolved.raw.diarization,
+      enable_language_identification: resolved.raw.languageIdentification,
+    },
+    headers,
+    logger,
+  );
 }

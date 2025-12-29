@@ -13,13 +13,15 @@ class MockWebSocket {
   static instances: MockWebSocket[] = [];
 
   readonly url: string;
+  readonly protocols?: string[];
   readyState: number = MockWebSocket.CONNECTING;
   binaryType: BinaryType = 'blob';
   sent: unknown[] = [];
   private listeners: Map<string, Set<(event: unknown) => void>> = new Map();
 
-  constructor(url: string) {
+  constructor(url: string, protocols?: string | string[]) {
     this.url = url;
+    this.protocols = Array.isArray(protocols) ? [...protocols] : protocols ? [protocols] : undefined;
     MockWebSocket.instances.push(this);
   }
 
@@ -117,6 +119,22 @@ describe('soniox provider', () => {
     // first sent item must be init JSON
     const first = socket.sent[0];
     expect(typeof first === 'string' && (first as string).includes('"api_key"')).toBe(true);
+  });
+
+  test('connect uses wsProtocols when provided', async () => {
+    const provider = soniox({
+      auth: { apiKey: 'soniox-test-key' },
+      model: 'stt-rt-v3',
+      wsProtocols: ['p1', 'p2'],
+    });
+    if (!provider.stream) throw new Error('ws stream expected');
+    const stream = provider.stream();
+    const connectPromise = stream.connect();
+    const socket = await getSocket();
+    expect(socket.protocols).toEqual(['p1', 'p2']);
+    socket.open();
+    await connectPromise;
+    expect(stream.status).toBe('ready');
   });
 
   test('connect includes enable_speaker_diarization when diarization enabled', async () => {
@@ -232,22 +250,32 @@ describe('soniox provider', () => {
           status: 200,
           headers: { 'content-type': 'application/json' },
         });
-      if (url.endsWith('/transcriptions') && (init?.method ?? 'GET') === 'POST')
+      if (url.endsWith('/transcriptions') && (init?.method ?? 'GET') === 'POST') {
+        const bodyRaw = init?.body;
+        const body = typeof bodyRaw === 'string' ? (JSON.parse(bodyRaw) as Record<string, unknown>) : undefined;
+        expect(body).toMatchObject({
+          model: 'stt-rt-v3',
+          language_hints: ['en', 'es'],
+          enable_speaker_diarization: true,
+          enable_language_identification: true,
+        });
+
         return new Response(
           JSON.stringify({
             id: 't1',
             status: 'completed',
             created_at: 'now',
-            model: 'm',
+            model: 'stt-rt-v3',
             audio_url: null,
             file_id: 'f1',
-            language_hints: null,
+            language_hints: ['en', 'es'],
             context: null,
-            enable_speaker_diarization: false,
-            enable_language_identification: false,
+            enable_speaker_diarization: true,
+            enable_language_identification: true,
           }),
           { status: 200, headers: { 'content-type': 'application/json' } },
         );
+      }
       if (url.endsWith('/transcriptions/t1/transcript'))
         return new Response(JSON.stringify({ id: 't1', text: 'ok', tokens: [] }), {
           status: 200,
@@ -257,7 +285,13 @@ describe('soniox provider', () => {
     });
     globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) =>
       fetchMock(input, init) as Promise<Response>) as unknown as typeof fetch;
-    const provider = soniox({ auth: { apiKey: 'key' }, model: 'stt-rt-v3' });
+    const provider = soniox({
+      auth: { apiKey: 'key' },
+      model: 'stt-rt-v3',
+      languageHints: ['en', 'es'],
+      diarization: true,
+      languageIdentification: true,
+    });
     const result = await provider.transcribe?.(new Uint8Array([1, 2]));
     expect(result?.text).toBe('ok');
     expect(seq.some((e) => e.url.endsWith('/files') && e.method === 'POST')).toBe(true);

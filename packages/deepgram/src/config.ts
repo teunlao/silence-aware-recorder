@@ -1,6 +1,7 @@
 import { clamp } from '@saraudio/utils';
 import { DEEPGRAM_MODEL_DEFINITIONS, isLanguageSupported } from './models';
 import type { DeepgramOptions } from './types';
+import { appendKeywords, appendReplace } from './url';
 
 /** Default Deepgram realtime endpoint (listen v1). */
 export const DEFAULT_BASE_URL = 'wss://api.deepgram.com/v1/listen';
@@ -68,16 +69,57 @@ export function resolveConfig(options: DeepgramOptions): DeepgramResolvedConfig 
 /** Build minimal required query params common for all sessions. */
 export function buildBaseParams(options: DeepgramOptions & { sampleRate: number; channels: 1 | 2 }): URLSearchParams {
   const params = new URLSearchParams();
+  const setBool = (key: string, value: boolean | undefined): void => {
+    if (value === undefined) return;
+    params.set(key, value ? 'true' : 'false');
+  };
+  const setNumber = (key: string, value: number | undefined): void => {
+    if (value === undefined) return;
+    params.set(key, String(value));
+  };
+
   params.set('model', options.model);
   params.set('encoding', options.encoding ?? 'linear16');
   params.set('sample_rate', String(options.sampleRate));
   params.set('channels', String(options.channels));
-  const multichannel = options.multichannel ?? options.channels > 1;
-  if (multichannel) params.set('multichannel', 'true');
+
+  const multichannel = options.multichannel ?? (options.channels > 1 ? true : undefined);
+  setBool('multichannel', multichannel);
+
   if (options.language) params.set('language', options.language);
+  setBool('detect_language', options.detectLanguage);
   if (options.version) params.set('version', options.version);
   params.set('interim_results', (options.interimResults ?? true) ? 'true' : 'false');
+
   const diarize = options.diarize ?? options.diarization;
-  if (diarize) params.set('diarize', 'true');
+  setBool('diarize', diarize);
+
+  if (options.endpointingMs !== undefined) {
+    params.set('endpointing', options.endpointingMs === false ? 'false' : String(options.endpointingMs));
+  }
+  setNumber('utterance_end_ms', options.utteranceEndMs);
+  setBool('vad_events', options.vadEvents);
+
+  setBool('punctuate', options.punctuate);
+  setBool('profanity_filter', options.profanityFilter);
+  setBool('smart_format', options.smartFormat);
+  setBool('numerals', options.numerals);
+  setBool('measurements', options.measurements);
+  setBool('paragraphs', options.paragraphs);
+  setBool('utterances', options.utterances);
+
+  if (options.keywords) {
+    appendKeywords(params, options.keywords);
+  }
+  if (options.search) {
+    options.search.forEach((term) => {
+      const trimmed = term.trim();
+      if (trimmed.length === 0) return;
+      params.append('search', trimmed);
+    });
+  }
+  if (options.replace) {
+    appendReplace(params, options.replace);
+  }
   return params;
 }

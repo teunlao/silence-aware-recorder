@@ -244,7 +244,8 @@ export function createWsStream(resolved: SonioxResolvedConfig, logger?: Logger):
         }
       }
       const url = await buildTransportUrl(resolved.raw.baseUrl, defaultBase, params, 'websocket');
-      const socket = new WebSocket(url);
+      const wsProtocols = resolved.raw.wsProtocols?.map((protocol) => protocol.trim()).filter((protocol) => protocol);
+      const socket = wsProtocols && wsProtocols.length > 0 ? new WebSocket(url, wsProtocols) : new WebSocket(url);
       ws = socket;
       socket.binaryType = 'arraybuffer';
       closedByClient = false;

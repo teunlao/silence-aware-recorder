@@ -119,14 +119,13 @@ export async function sonioxTranscribeFile(
   resolved: SonioxResolvedConfig,
   audio: Blob | ArrayBuffer | Uint8Array,
   request: Omit<SonioxHttpCreateTranscriptionRequest, 'file_id' | 'audio_url'> & { filename?: string },
+  headersInit?: HeadersInit,
   logger?: Logger,
 ): Promise<TranscriptResult> {
-  const upload = await sonioxUploadFile(resolved, audio, { filename: request.filename }, logger);
-  const job = await sonioxCreateTranscription(resolved, {
-    model: request.model,
-    file_id: upload.id,
-    language_hints: request.language_hints,
-  });
+  const { filename, ...createRequest } = request;
+
+  const upload = await sonioxUploadFile(resolved, audio, { filename, headers: headersInit }, logger);
+  const job = await sonioxCreateTranscription(resolved, { ...createRequest, file_id: upload.id }, headersInit);
   // Simple polling; in real apps consider webhooks.
   let current = job;
   const start = Date.now();
@@ -135,12 +134,12 @@ export async function sonioxTranscribeFile(
     const waited = Date.now() - start;
     const sleep = Math.min(1000 + Math.floor(waited / 10), 5000);
     await new Promise((r) => setTimeout(r, sleep));
-    current = await sonioxGetTranscription(resolved, job.id);
+    current = await sonioxGetTranscription(resolved, job.id, headersInit);
   }
   if (current.status !== 'completed') {
     throw new ProviderError(`Soniox job failed: ${current.error_message ?? 'unknown'}`, 'soniox');
   }
-  const tr = await sonioxGetTranscript(resolved, job.id);
+  const tr = await sonioxGetTranscript(resolved, job.id, headersInit);
   const tokens = tr.tokens ?? [];
   return {
     text: tr.text ?? '',
