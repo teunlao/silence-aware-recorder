@@ -1,6 +1,6 @@
 {
   "name": "@saraudio/deepgram",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Deepgram transcription provider for SARAUDIO",
   "license": "MIT",
   "sideEffects": false,
