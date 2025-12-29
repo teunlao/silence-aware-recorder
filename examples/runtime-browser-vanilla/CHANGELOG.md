@@ -1,5 +1,13 @@
 ## 0.0.2
 
+## 0.0.7
+
+### Patch Changes
+
+- @saraudio/meter@0.0.7
+- @saraudio/runtime-browser@0.1.1
+- @saraudio/vad-energy@0.0.7
+
 ## 0.0.6
 
 ### Patch Changes

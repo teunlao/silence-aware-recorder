@@ -1,6 +1,6 @@
 {
   "name": "@saraudio/react",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "React bindings for SARAUDIO pipeline",
   "license": "MIT",
   "sideEffects": false,
