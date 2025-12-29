@@ -1,5 +1,13 @@
 # @saraudio/example-runtime-node-transcribe
 
+## 0.0.7
+
+### Patch Changes
+
+- Updated dependencies [5405a92]
+  - @saraudio/deepgram@0.4.1
+  - @saraudio/soniox@0.4.1
+
 ## 0.0.6
 
 ### Patch Changes
