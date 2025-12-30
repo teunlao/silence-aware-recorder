@@ -25,6 +25,8 @@ export function createWsStream(resolved: SonioxResolvedConfig, logger?: Logger):
   let connecting: Promise<void> | null = null;
   let disconnecting: Promise<void> | null = null;
   let closedByClient = false;
+  let keepaliveTimer: ReturnType<typeof setInterval> | null = null;
+  let lastActivityAtMs = 0;
 
   const queue: { frame: NormalizedFrame<'pcm16'>; dur: number }[] = [];
   let queuedMs = 0;
@@ -61,6 +63,35 @@ export function createWsStream(resolved: SonioxResolvedConfig, logger?: Logger):
     if (status === next) return;
     status = next;
     statusHandlers.forEach((h) => h(status));
+  };
+
+  const markActivity = (): void => {
+    lastActivityAtMs = Date.now();
+  };
+
+  const clearKeepalive = (): void => {
+    if (!keepaliveTimer) return;
+    clearInterval(keepaliveTimer);
+    keepaliveTimer = null;
+  };
+
+  const startKeepalive = (): void => {
+    clearKeepalive();
+    keepaliveTimer = setInterval(() => {
+      const socket = ws;
+      if (!socket || socket.readyState !== WebSocket.OPEN) return;
+      const idleMs = Date.now() - lastActivityAtMs;
+      if (idleMs < resolved.wsKeepaliveMs) return;
+      try {
+        socket.send(JSON.stringify({ type: 'keepalive' }));
+        markActivity();
+      } catch (err) {
+        logger?.warn('soniox keepalive send failed', {
+          module: 'provider-soniox',
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }, resolved.wsKeepaliveMs);
   };
 
   const isSonioxRawMessage = (value: unknown): value is SonioxRawMessage => {
@@ -117,6 +148,7 @@ export function createWsStream(resolved: SonioxResolvedConfig, logger?: Logger):
       if (!item) break;
       const buf = item.frame.pcm.buffer.slice(0);
       socket.send(buf);
+      markActivity();
     }
   };
 
@@ -291,9 +323,11 @@ export function createWsStream(resolved: SonioxResolvedConfig, logger?: Logger):
         }
         try {
           socket.send(JSON.stringify(init));
+          markActivity();
         } catch (err) {
           emitError(new NetworkError('Failed to send init', true, err));
         }
+        startKeepalive();
         setStatus('ready');
         flushQueue();
       };
@@ -304,6 +338,7 @@ export function createWsStream(resolved: SonioxResolvedConfig, logger?: Logger):
       };
       const onClose = (ev: CloseEvent): void => {
         const err = mapCloseReason(ev.code, String(ev.reason ?? ''));
+        clearKeepalive();
         ws = null;
         resetQueue();
         setStatus('disconnected');
@@ -326,6 +361,7 @@ export function createWsStream(resolved: SonioxResolvedConfig, logger?: Logger):
       if (!socket) return;
       try {
         closedByClient = true;
+        clearKeepalive();
         // Signal end of stream by sending zero‑length frame per Soniox docs
         try {
           socket.send(new ArrayBuffer(0));
@@ -348,6 +384,7 @@ export function createWsStream(resolved: SonioxResolvedConfig, logger?: Logger):
     if (!socket || socket.readyState !== WebSocket.OPEN) return;
     try {
       socket.send(JSON.stringify({ type: 'finalize' }));
+      markActivity();
     } catch {}
   };
 

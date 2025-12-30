@@ -81,6 +81,7 @@ beforeEach(() => {
 afterEach(() => {
   mutableGlobal.WebSocket = originalWebSocket;
   globalThis.fetch = originalFetch;
+  vi.useRealTimers();
 });
 
 function createProvider(): SonioxProvider {
@@ -190,6 +191,24 @@ describe('soniox provider', () => {
     // First element was init JSON; two audio frames should remain
     const abufs = socket.sent.filter((x) => x instanceof ArrayBuffer);
     expect(abufs.length).toBe(2);
+  });
+
+  test('sends keepalive at configured interval when idle', async () => {
+    vi.useFakeTimers();
+    const provider = soniox({
+      auth: { apiKey: 'soniox-test-key' },
+      model: 'stt-rt-v3',
+      wsKeepaliveMs: 8_000,
+    });
+    if (!provider.stream) throw new Error('ws stream expected');
+    const stream = provider.stream();
+    const connectPromise = stream.connect();
+    const socket = await getSocket();
+    socket.open();
+    await connectPromise;
+
+    vi.advanceTimersByTime(8_000);
+    expect(socket.sent).toContain('{"type":"keepalive"}');
   });
 
   test('parses partial and final tokens', async () => {

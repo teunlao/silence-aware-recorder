@@ -22,6 +22,8 @@ const SONIOX_FIELD_DESCRIPTIONS = {
   headers:
     'Additional HTTP headers to include in REST requests (batch/file flows). Not used for WebSocket in browsers (custom WS headers are not supported).',
   wsProtocols: 'Additional WebSocket subprotocols. Most Soniox integrations do not need this.',
+  wsKeepaliveMs:
+    'WebSocket keepalive interval in milliseconds. When the client is not sending audio, the SDK periodically sends {"type":"keepalive"} to keep the realtime connection alive (Soniox requires at least one keepalive message every 20 seconds while idle).',
 
   model:
     'Soniox model id to use for transcription (e.g. `stt-rt-v3`). You can list available models via Soniox REST `GET /v1/models`.',
@@ -95,6 +97,7 @@ export const SonioxOptionsSchema = z
       .describe(SONIOX_FIELD_DESCRIPTIONS.headers)
       .optional(),
     wsProtocols: z.array(z.string()).describe(SONIOX_FIELD_DESCRIPTIONS.wsProtocols).optional(),
+    wsKeepaliveMs: z.number().positive().describe(SONIOX_FIELD_DESCRIPTIONS.wsKeepaliveMs).optional(),
     logger: LoggerSchema.optional(),
 
     model: SonioxModelIdSchema.describe(SONIOX_FIELD_DESCRIPTIONS.model),
@@ -140,6 +143,7 @@ export const SonioxOverridesSchema = z
     query: z.record(z.string(), JsonPrimitiveSchema).describe(SONIOX_FIELD_DESCRIPTIONS.query).optional(),
     headers: z.record(z.string(), z.string()).describe(SONIOX_FIELD_DESCRIPTIONS.headers).optional(),
     wsProtocols: z.array(z.string()).describe(SONIOX_FIELD_DESCRIPTIONS.wsProtocols).optional(),
+    wsKeepaliveMs: z.number().positive().describe(SONIOX_FIELD_DESCRIPTIONS.wsKeepaliveMs).optional(),
     logger: z.never().optional(),
 
     model: SonioxModelIdSchema.describe(SONIOX_FIELD_DESCRIPTIONS.model).optional(),
