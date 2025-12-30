@@ -1,5 +1,15 @@
 ## 0.0.2
 
+## 0.0.14
+
+### Patch Changes
+
+- Updated dependencies [e6afb58]
+  - @saraudio/core@0.5.0
+  - @saraudio/capture-node@0.2.6
+  - @saraudio/runtime-node@0.2.2
+  - @saraudio/vad-energy@0.0.8
+
 ## 0.0.13
 
 ### Patch Changes
