@@ -25,6 +25,18 @@ export type TranscriptToken = {
   confidence?: number;
   /** Speaker index if diarization is available. */
   speaker?: number;
+  /** Language of this token (BCP-47 / ISO), when available. */
+  language?: string;
+  /**
+   * Translation marker for bilingual streams (Soniox-style).
+   * Present only for translation tokens; absence implies "original".
+   */
+  translationStatus?: 'translation';
+  /**
+   * Source language for translation tokens, when available.
+   * Only meaningful when translationStatus === "translation".
+   */
+  translationSourceLanguage?: string;
   /** Provider-specific token-level fields. Prefer small, documented shapes. */
   metadata?: Record<string, unknown>;
 };

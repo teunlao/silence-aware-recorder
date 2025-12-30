@@ -33,6 +33,10 @@ const SONIOX_FIELD_DESCRIPTIONS = {
     'Audio format for Soniox realtime (`audio_format`). Use `auto` for containerized audio (wav/mp3/webm/etc). For raw PCM/codecs (e.g. pcm_s16le) you must provide sampleRate and channels.',
   languageHints:
     'Optional list of ISO language codes to bias recognition. This is a hint/prioritization (not a hard restriction).',
+  languageHintsStrict:
+    'When true, Soniox relies more on language_hints to restrict the recognized language (best-effort; see Soniox language restrictions docs).',
+  translation:
+    'Optional realtime/batch translation configuration. One-way: { type: "one_way", targetLanguage }. Two-way: { type: "two_way", languageA, languageB }.',
   diarization: 'Enable speaker diarization (adds speaker labels to tokens; Soniox supports up to ~15 speakers).',
   endpointDetection:
     'Enable endpoint detection (end-of-utterance). When triggered, Soniox finalizes accumulated tokens and emits an `<end>` marker.',
@@ -101,6 +105,25 @@ export const SonioxOptionsSchema = z
       .optional(),
     audioFormat: z.string().describe(SONIOX_FIELD_DESCRIPTIONS.audioFormat).optional(),
     languageHints: z.array(z.string()).describe(SONIOX_FIELD_DESCRIPTIONS.languageHints).optional(),
+    languageHintsStrict: z.boolean().describe(SONIOX_FIELD_DESCRIPTIONS.languageHintsStrict).optional(),
+    translation: z
+      .union([
+        z
+          .object({
+            type: z.literal('one_way'),
+            targetLanguage: z.string().min(1),
+          })
+          .strict(),
+        z
+          .object({
+            type: z.literal('two_way'),
+            languageA: z.string().min(1),
+            languageB: z.string().min(1),
+          })
+          .strict(),
+      ])
+      .describe(SONIOX_FIELD_DESCRIPTIONS.translation)
+      .optional(),
     diarization: z.boolean().describe(SONIOX_FIELD_DESCRIPTIONS.diarization).optional(),
     endpointDetection: z.boolean().describe(SONIOX_FIELD_DESCRIPTIONS.endpointDetection).optional(),
     languageIdentification: z.boolean().describe(SONIOX_FIELD_DESCRIPTIONS.languageIdentification).optional(),
@@ -127,6 +150,25 @@ export const SonioxOverridesSchema = z
       .optional(),
     audioFormat: z.string().describe(SONIOX_FIELD_DESCRIPTIONS.audioFormat).optional(),
     languageHints: z.array(z.string()).describe(SONIOX_FIELD_DESCRIPTIONS.languageHints).optional(),
+    languageHintsStrict: z.boolean().describe(SONIOX_FIELD_DESCRIPTIONS.languageHintsStrict).optional(),
+    translation: z
+      .union([
+        z
+          .object({
+            type: z.literal('one_way'),
+            targetLanguage: z.string().min(1),
+          })
+          .strict(),
+        z
+          .object({
+            type: z.literal('two_way'),
+            languageA: z.string().min(1),
+            languageB: z.string().min(1),
+          })
+          .strict(),
+      ])
+      .describe(SONIOX_FIELD_DESCRIPTIONS.translation)
+      .optional(),
     diarization: z.boolean().describe(SONIOX_FIELD_DESCRIPTIONS.diarization).optional(),
     endpointDetection: z.boolean().describe(SONIOX_FIELD_DESCRIPTIONS.endpointDetection).optional(),
     languageIdentification: z.boolean().describe(SONIOX_FIELD_DESCRIPTIONS.languageIdentification).optional(),

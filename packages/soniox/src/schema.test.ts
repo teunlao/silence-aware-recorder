@@ -39,4 +39,20 @@ describe('Soniox schema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('accepts translation in runtime options', () => {
+    const result = SonioxOptionsSchema.safeParse({
+      model: 'stt-rt-v3',
+      auth: { apiKey: 'k' },
+      translation: { type: 'one_way', targetLanguage: 'ru' },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts translation in JSON overrides', () => {
+    const result = SonioxOverridesSchema.safeParse({
+      translation: { type: 'two_way', languageA: 'en', languageB: 'es' },
+    });
+    expect(result.success).toBe(true);
+  });
 });

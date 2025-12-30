@@ -8,6 +8,17 @@
  * Client → Server: initial JSON configuration sent immediately after opening the WebSocket.
  * After this message, the client streams binary audio frames.
  */
+export type SonioxWsTranslationConfig =
+  | {
+      type: 'one_way';
+      target_language: string;
+    }
+  | {
+      type: 'two_way';
+      language_a: string;
+      language_b: string;
+    };
+
 export interface SonioxWsInitConfig {
   /** API key or temporary key used to authorize the stream. */
   api_key: string;
@@ -21,6 +32,11 @@ export interface SonioxWsInitConfig {
   sample_rate?: number;
   /** List of expected languages (BCP‑47) to guide recognition, e.g., ["en","es"]. */
   language_hints?: ReadonlyArray<string>;
+  /**
+   * If true, restrict recognition to only the languages in `language_hints`.
+   * If false/omitted, hints guide recognition but are not strict.
+   */
+  language_hints_strict?: boolean;
   /** Enable automatic speaker diarization (speaker labels in outputs). */
   enable_speaker_diarization?: boolean;
   /** Enable automatic language identification for the stream. */
@@ -39,7 +55,7 @@ export interface SonioxWsInitConfig {
    * One‑way example: { type: 'one_way', target_language: 'en' }
    * Two‑way example: { type: 'two_way', language_a: 'en', language_b: 'es' }
    */
-  translation?: Record<string, unknown>;
+  translation?: SonioxWsTranslationConfig;
 }
 
 /**

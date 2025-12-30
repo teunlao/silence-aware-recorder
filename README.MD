@@ -133,6 +133,19 @@ const { start, stop, connect, disconnect, partial, transcript, status } = useTra
 - `@saraudio/deepgram` — WS realtime + HTTP chunked transcription (use raw model IDs like `nova-3`).
 - `@saraudio/soniox` — WS realtime (`stt-rt-v3`) + HTTP batch via Files API (`stt-async-v3`).
 
+### Soniox: language restrictions + translation
+
+`@saraudio/soniox` supports Soniox language controls and realtime/batch translation:
+
+- `languageHints?: string[]` → `language_hints`
+- `languageHintsStrict?: boolean` → `language_hints_strict`
+- `languageIdentification?: boolean` → `enable_language_identification`
+- `translation?: { type: 'one_way'; targetLanguage: string } | { type: 'two_way'; languageA: string; languageB: string }` → `translation`
+
+When enabled, Soniox may emit translation tokens with:
+- `token.translationStatus === 'translation'`
+- `token.translationSourceLanguage` and `token.language` when available
+
 See provider TypeScript options/types (`DeepgramOptions`, `SonioxOptions`) for full configuration.
 
 ## Packages

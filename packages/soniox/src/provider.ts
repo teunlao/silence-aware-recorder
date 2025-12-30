@@ -22,6 +22,7 @@ export function soniox(options: SonioxOptions): SonioxProvider {
       segments: false,
       forceEndpoint: true,
       multichannel: true,
+      translation: 'two_way',
       transports: { http: true, websocket: true },
     },
     getPreferredFormat() {

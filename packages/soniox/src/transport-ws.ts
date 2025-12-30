@@ -89,6 +89,12 @@ export function createWsStream(resolved: SonioxResolvedConfig, logger?: Logger):
     const speaker = normalizeSpeaker(t.speaker);
     if (speaker !== undefined) token.speaker = speaker;
 
+    if (typeof t.language === 'string' && t.language.trim().length > 0) token.language = t.language;
+    if (typeof t.source_language === 'string' && t.source_language.trim().length > 0) {
+      token.translationSourceLanguage = t.source_language;
+    }
+    if (t.translation_status === 'translation') token.translationStatus = 'translation';
+
     const tokenMetadata: Record<string, unknown> = {};
     if (typeof t.language === 'string') tokenMetadata.language = t.language;
     if (typeof t.source_language === 'string') tokenMetadata.sourceLanguage = t.source_language;
@@ -260,6 +266,9 @@ export function createWsStream(resolved: SonioxResolvedConfig, logger?: Logger):
           sample_rate: resolved.sampleRate,
           language_hints: resolved.raw.languageHints,
         };
+        if (resolved.raw.languageHintsStrict === true) {
+          init.language_hints_strict = true;
+        }
         if (resolved.raw.diarization === true) {
           init.enable_speaker_diarization = true;
         }
@@ -268,6 +277,17 @@ export function createWsStream(resolved: SonioxResolvedConfig, logger?: Logger):
         }
         if (resolved.raw.languageIdentification === true) {
           init.enable_language_identification = true;
+        }
+        if (resolved.raw.translation) {
+          if (resolved.raw.translation.type === 'one_way') {
+            init.translation = { type: 'one_way', target_language: resolved.raw.translation.targetLanguage };
+          } else {
+            init.translation = {
+              type: 'two_way',
+              language_a: resolved.raw.translation.languageA,
+              language_b: resolved.raw.translation.languageB,
+            };
+          }
         }
         try {
           socket.send(JSON.stringify(init));

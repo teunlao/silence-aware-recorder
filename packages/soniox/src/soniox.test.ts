@@ -121,6 +121,31 @@ describe('soniox provider', () => {
     expect(typeof first === 'string' && (first as string).includes('"api_key"')).toBe(true);
   });
 
+  test('connect includes translation and language_hints_strict when provided', async () => {
+    const provider = soniox({
+      auth: { apiKey: 'soniox-test-key' },
+      model: 'stt-rt-v3',
+      languageHints: ['en'],
+      languageHintsStrict: true,
+      translation: { type: 'one_way', targetLanguage: 'ru' },
+    });
+    if (!provider.stream) throw new Error('ws stream expected');
+    const stream = provider.stream();
+    const connectPromise = stream.connect();
+    const socket = await getSocket();
+    socket.open();
+    await connectPromise;
+
+    const first = socket.sent[0];
+    expect(typeof first).toBe('string');
+    const init = JSON.parse(String(first)) as Record<string, unknown>;
+    expect(init).toMatchObject({
+      language_hints: ['en'],
+      language_hints_strict: true,
+      translation: { type: 'one_way', target_language: 'ru' },
+    });
+  });
+
   test('connect uses wsProtocols when provided', async () => {
     const provider = soniox({
       auth: { apiKey: 'soniox-test-key' },
@@ -195,6 +220,38 @@ describe('soniox provider', () => {
     });
   });
 
+  test('maps translation token fields into first-class token properties', async () => {
+    const provider = createProvider();
+    if (!provider.stream) throw new Error('ws stream expected');
+    const stream = provider.stream();
+    const promise = stream.connect();
+    const socket = await getSocket();
+    const updates: TranscriptUpdate[] = [];
+    stream.onUpdate((u) => updates.push(u));
+    socket.open();
+    await promise;
+
+    socket.emitMessage(
+      JSON.stringify({
+        tokens: [
+          { text: 'hola', is_final: true, language: 'es' },
+          { text: 'hello', is_final: true, translation_status: 'translation', language: 'en', source_language: 'es' },
+        ],
+      }),
+    );
+
+    expect(updates).toHaveLength(1);
+    expect(updates[0]?.tokens).toHaveLength(2);
+    expect(updates[0]?.tokens?.[0]).toMatchObject({ text: 'hola', isFinal: true, language: 'es' });
+    expect(updates[0]?.tokens?.[1]).toMatchObject({
+      text: 'hello',
+      isFinal: true,
+      language: 'en',
+      translationStatus: 'translation',
+      translationSourceLanguage: 'es',
+    });
+  });
+
   test('normalizes speaker labels into numeric ids and preserves label map', async () => {
     const provider = soniox({ auth: { apiKey: 'soniox-test-key' }, model: 'stt-rt-v3', diarization: true });
     if (!provider.stream) throw new Error('ws stream expected');
@@ -256,8 +313,10 @@ describe('soniox provider', () => {
         expect(body).toMatchObject({
           model: 'stt-rt-v3',
           language_hints: ['en', 'es'],
+          language_hints_strict: true,
           enable_speaker_diarization: true,
           enable_language_identification: true,
+          translation: { type: 'one_way', target_language: 'ru' },
         });
 
         return new Response(
@@ -289,8 +348,10 @@ describe('soniox provider', () => {
       auth: { apiKey: 'key' },
       model: 'stt-rt-v3',
       languageHints: ['en', 'es'],
+      languageHintsStrict: true,
       diarization: true,
       languageIdentification: true,
+      translation: { type: 'one_way', targetLanguage: 'ru' },
     });
     const result = await provider.transcribe?.(new Uint8Array([1, 2]));
     expect(result?.text).toBe('ok');

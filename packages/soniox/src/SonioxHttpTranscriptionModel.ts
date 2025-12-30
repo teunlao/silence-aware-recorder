@@ -72,6 +72,17 @@ export interface SonioxHttpUploadFileResponse {
 /**
  * POST /v1/transcriptions — Create a transcription job for a URL or previously uploaded file.
  */
+export type SonioxHttpTranslationConfig =
+  | {
+      type: 'one_way';
+      target_language: string;
+    }
+  | {
+      type: 'two_way';
+      language_a: string;
+      language_b: string;
+    };
+
 export interface SonioxHttpCreateTranscriptionRequest {
   /** Async model identifier to use for batch processing. */
   model: string;
@@ -81,12 +92,17 @@ export interface SonioxHttpCreateTranscriptionRequest {
   file_id?: string;
   /** Expected languages (BCP‑47). */
   language_hints?: ReadonlyArray<string>;
+  /**
+   * If true, restrict recognition to only the languages in `language_hints`.
+   * If false/omitted, hints guide recognition but are not strict.
+   */
+  language_hints_strict?: boolean;
   /** Enable per‑segment speaker diarization. */
   enable_speaker_diarization?: boolean;
   /** Enable automatic language identification. */
   enable_language_identification?: boolean;
   /** Optional translation configuration (one‑way/two‑way). */
-  translation?: Record<string, unknown>;
+  translation?: SonioxHttpTranslationConfig;
   /** Domain/context information to guide recognition and formatting. */
   context?: Record<string, unknown> | string;
   /** HTTPS callback URL to receive completion/error notifications. */
