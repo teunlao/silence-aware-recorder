@@ -1,5 +1,12 @@
 # @saraudio/example-runtime-node-transcribe
 
+## 0.0.9
+
+### Patch Changes
+
+- Updated dependencies [975a939]
+  - @saraudio/soniox@0.5.1
+
 ## 0.0.8
 
 ### Patch Changes
