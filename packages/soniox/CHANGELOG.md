@@ -1,5 +1,16 @@
 # @saraudio/soniox
 
+## 0.5.0
+
+### Minor Changes
+
+- e6afb58: Add a unified V1 surface for languages/translations (based on Soniox capabilities): new token fields (`language`, `translationStatus`, `translationSourceLanguage`) and new Soniox options (`languageHintsStrict`, `translation` one-way/two-way) with correct WS/HTTP wiring.
+
+### Patch Changes
+
+- Updated dependencies [e6afb58]
+  - @saraudio/core@0.5.0
+
 ## 0.4.1
 
 ### Patch Changes

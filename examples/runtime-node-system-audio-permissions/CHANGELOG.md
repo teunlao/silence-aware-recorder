@@ -1,5 +1,13 @@
 # @saraudio/example-runtime-node-system-audio-permissions
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [e6afb58]
+  - @saraudio/core@0.5.0
+  - @saraudio/capture-node@0.2.6
+
 ## 0.0.4
 
 ### Patch Changes

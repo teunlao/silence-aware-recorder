@@ -1,5 +1,12 @@
 ## 0.0.2
 
+## 0.4.2
+
+### Patch Changes
+
+- Updated dependencies [e6afb58]
+  - @saraudio/core@0.5.0
+
 ## 0.4.1
 
 ### Patch Changes

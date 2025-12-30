@@ -1,5 +1,11 @@
 ## 0.0.2
 
+## 0.5.0
+
+### Minor Changes
+
+- e6afb58: Add a unified V1 surface for languages/translations (based on Soniox capabilities): new token fields (`language`, `translationStatus`, `translationSourceLanguage`) and new Soniox options (`languageHintsStrict`, `translation` one-way/two-way) with correct WS/HTTP wiring.
+
 ## 0.4.0
 
 ### Minor Changes
