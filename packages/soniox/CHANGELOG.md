@@ -1,5 +1,11 @@
 # @saraudio/soniox
 
+## 0.5.1
+
+### Patch Changes
+
+- 975a939: Add Soniox WebSocket keepalive when idle (prevents idle disconnects while audio is paused).
+
 ## 0.5.0
 
 ### Minor Changes
